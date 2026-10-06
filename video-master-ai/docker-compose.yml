@@ -1,0 +1,54 @@
+# Video Master AI: MySQL + API + analysis worker + web (nginx serving the React build).
+# Start: docker compose up -d --build   ·   open http://localhost:8080
+services:
+  db:
+    image: mysql:8.4
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    environment:
+      MYSQL_DATABASE: vma
+      MYSQL_USER: vma
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-vma}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me-root}
+    volumes:
+      - mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uvma", "-p${MYSQL_PASSWORD:-vma}"]
+      interval: 5s
+      retries: 30
+
+  api:
+    build: ./backend
+    env_file: .env
+    environment:
+      VMA_DATABASE_URL: mysql+pymysql://vma:${MYSQL_PASSWORD:-vma}@db:3306/vma?charset=utf8mb4
+      VMA_ROLE: api
+    volumes:
+      - evidence:/data
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    build: ./backend
+    command: ["python", "-m", "app.worker"]
+    env_file: .env
+    environment:
+      VMA_DATABASE_URL: mysql+pymysql://vma:${MYSQL_PASSWORD:-vma}@db:3306/vma?charset=utf8mb4
+      VMA_ROLE: worker
+    volumes:
+      - evidence:/data
+    depends_on:
+      db:
+        condition: service_healthy
+    # Scale analysis horizontally: docker compose up -d --scale worker=3
+
+  web:
+    build: ./frontend
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      - api
+
+volumes:
+  mysql:
+  evidence:

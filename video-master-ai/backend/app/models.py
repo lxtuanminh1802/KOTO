@@ -30,6 +30,9 @@ def uid() -> str:
     return str(uuid.uuid4())
 
 
+# BIGINT on MySQL; SQLite only autoincrements a plain INTEGER primary key (unit tests).
+BIGPK = BigInteger().with_variant(Integer, "sqlite")
+
 def utcnow() -> datetime:
     return datetime.utcnow().replace(microsecond=0)
 
@@ -385,7 +388,7 @@ class AuditLog(Base):
     """Append-only, hash-chained chain-of-custody log (UR-AUD-01, NFR-SEC-03)."""
 
     __tablename__ = "audit_logs"
-    seq: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    seq: Mapped[int] = mapped_column(BIGPK, primary_key=True, autoincrement=True)
     at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
     user_id: Mapped[str | None] = mapped_column(String(36), nullable=True)  # None = Hệ thống
     actor: Mapped[str] = mapped_column(String(128))
@@ -417,7 +420,7 @@ class Event(Base):
     """Realtime bus: workers append rows, the API relays them to WebSocket clients."""
 
     __tablename__ = "events"
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BIGPK, primary_key=True, autoincrement=True)
     user_id: Mapped[str | None] = mapped_column(String(36), nullable=True)  # None = everyone
     type: Mapped[str] = mapped_column(String(48))
     payload: Mapped[dict] = mapped_column(JSON, default=dict)

@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     login_lock_minutes: int = 15
     pin_max_failures: int = 5
 
-    maptiler_key: str = "HlF0fvzCCBtMA9sGgBww"
+    maptiler_key: str = ""
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     ffmpeg: str = "ffmpeg"
