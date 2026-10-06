@@ -3,8 +3,8 @@ import { useShallow } from 'zustand/react/shallow'
 import type { Case, Video } from './lib/types'
 import { getSession, onSession, type Session } from './lib/api'
 import { player } from './lib/player'
-import { qc, useCases, useVideos } from './lib/queries'
-import { connectRealtime, disconnectRealtime } from './lib/realtime'
+import { qc, useCases, useNotifications, useVideos } from './lib/queries'
+import { connectRealtime, disconnectRealtime, showMissedAlerts } from './lib/realtime'
 import { closeModal, openModal, useUI } from './lib/store'
 import Assistant from './components/Assistant'
 import Header, { lockSession, MobileNav } from './components/Header'
@@ -75,6 +75,9 @@ function Shell() {
       if ((first?.id || null) !== useUI.getState().videoId) set({ videoId: first?.id || null, t: 0, inT: null, outT: null, focusDet: null })
     }
   }, [caseId, videos, set])
+  const { data: notes } = useNotifications()
+  const lang = useUI(s => s.lang)
+  useEffect(() => { if (notes) showMissedAlerts(notes, lang) }, [notes])
   // First sign-in welcome (UR-HELP-01), stored server-side.
   useEffect(() => { if (!getSession()?.user.welcome_seen) setTimeout(() => openModal('welcome'), 500) }, [])
 

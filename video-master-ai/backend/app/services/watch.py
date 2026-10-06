@@ -58,7 +58,7 @@ def fire_alert(db: Session, d: Detection, v: Video, hit: tuple[WatchItem, float,
     recipients = watch_recipients(db, case, v.acquired_by)
     notify(db, recipients, kind="watch", tone="danger", title=(f"Khớp danh sách theo dõi: {label}", f"Watchlist match: {label_en}"),
            body=(f"{where} · {sim:.0f}% · phát hiện khi đang phân tích", f"{where} · {sim:.0f}% · found during analysis"),
-           link={"alert": d.id, "video": v.id, "t": d.t_in})
+           link={"alert": d.id, "video": v.id, "t": d.t_in, "label_vi": label, "label_en": label_en, "sim": sim, "ev": v.evidence_id, "note": w.note})
     payload = {"detection_id": d.id, "video_id": v.id, "case_id": v.case_id, "label_vi": label, "label_en": label_en, "similarity": sim,
                "evidence_id": v.evidence_id, "t": d.t_in, "note": w.note, "kind": d.kind.value.lower()}
     for uid in recipients:

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api, ApiError, media } from '../lib/api'
 import { fmtSize } from '../lib/format'
 import { useT } from '../lib/i18n'
@@ -16,13 +16,15 @@ export function PdfDialog({ ids, query, caseId }: { ids: string[]; query: string
   const [step, setStep] = useState(0)
   const [res, setRes] = useState<{ file_name: string; sha256: string; url: string; count: number } | null>(null)
   const [err, setErr] = useState('')
+  const started = useRef(false)
   useEffect(() => {
+    if (started.current) return  // one report per dialog, even under StrictMode's double effects
+    started.current = true
     const timer = setInterval(() => setStep(s => Math.min(s + 1, steps.length - 1)), 600)
     api<{ file_name: string; sha256: string; url: string; count: number }>(`/api/cases/${caseId}/report`, { body: { detection_ids: ids, query } })
       .then(r => { setRes(r); setStep(steps.length); refreshCase(); qc.invalidateQueries({ queryKey: ['notifications'] }); toast(L(`Đã tạo báo cáo PDF, ${r.count} kết quả`, `PDF report created, ${r.count} results`), 'success') })
       .catch(e => setErr(e instanceof ApiError ? e.msg(lang) : String(e)))
       .finally(() => clearInterval(timer))
-    return () => clearInterval(timer)
   }, [])
   return (
     <Modal onClose={closeModal} size="sm:max-w-md" label={L('Đang tạo báo cáo', 'Building report')}>
@@ -102,7 +104,7 @@ export function PackageDialog({ caseId }: { caseId: string }) {
           )}
         </div>
         <footer className="px-6 py-4 border-t border-line flex flex-wrap items-center gap-3">
-          <p className="text-xs text-muted flex-1 min-w-[180px] font-mono">{res ? L('Gói đã sẵn sàng. Bấm Lưu để tải về.', 'Package ready. Press Save to download.') : `GoiChungCu_${c?.code}_${ymd}.zip`}</p>
+          <p className={`text-xs text-muted flex-1 min-w-[180px] ${res ? '' : 'font-mono'}`}>{res ? L('Gói đã sẵn sàng. Bấm Lưu để tải về.', 'Package ready. Press Save to download.') : `GoiChungCu_${c?.code}_${ymd}.zip`}</p>
           <span className="flex gap-2 ml-auto"><button className="btn btn-quiet" onClick={closeModal}>{phase === 'done' ? L('Đóng', 'Close') : L('Hủy', 'Cancel')}</button>
             {phase === 'pick' && <button className="btn btn-primary" onClick={build}><Icon name="package" />{L('Tạo gói .zip', 'Build .zip')}</button>}
             {res && <a className="btn btn-primary" href={media(res.url)} download={res.file_name}><Icon name="download" />{L('Lưu tệp .zip', 'Save .zip')}</a>}</span>

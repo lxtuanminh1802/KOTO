@@ -10,7 +10,7 @@ export function AlertStack() {
   const { alerts, set } = useUI()
   const close = (id: string) => set(s => ({ alerts: s.alerts.filter(a => a.id !== id) }))
   return (
-    <div className="fixed z-[72] bottom-20 lg:bottom-6 right-4 w-[min(380px,calc(100vw-32px))] flex flex-col gap-2" aria-live="assertive">
+    <div className="fixed z-[72] top-16 right-4 w-[min(380px,calc(100vw-32px))] flex flex-col gap-2" aria-live="assertive">
       {alerts.map(a => (
         <div key={a.id} role="alert" className="panel shadow-2xl p-4 fade-in flex gap-3 ring-1 ring-danger/40">
           <span className="w-9 h-9 rounded-full bg-danger/10 text-danger grid place-items-center shrink-0"><Icon name="siren" /></span>
