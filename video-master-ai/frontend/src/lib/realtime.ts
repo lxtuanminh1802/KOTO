@@ -1,4 +1,4 @@
-import { getSession } from './api'
+import { API_BASE, getSession } from './api'
 import { translate } from './i18n'
 import { qc } from './queries'
 import { toast, useUI } from './store'
@@ -15,8 +15,9 @@ export function connectRealtime() {
   stopped = false
   const s = getSession()
   if (!s) return
-  const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-  ws = new WebSocket(`${proto}://${location.host}/api/ws?token=${encodeURIComponent(s.media)}`)
+  const origin = API_BASE ? new URL(API_BASE) : location
+  const proto = origin.protocol === 'https:' ? 'wss' : 'ws'
+  ws = new WebSocket(`${proto}://${origin.host}/api/ws?token=${encodeURIComponent(s.media)}`)
   const ping = window.setInterval(() => ws?.readyState === 1 && ws.send('ping'), 25_000)
   ws.onmessage = e => handle(JSON.parse(e.data))
   ws.onclose = () => {

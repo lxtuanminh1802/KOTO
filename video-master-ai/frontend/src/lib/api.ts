@@ -62,13 +62,17 @@ export class ApiError extends Error {
   }
 }
 
+/** Backend origin when the web app is hosted apart from the API (e.g. Vercel). Empty = same origin. */
+export const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
+const abs = (path: string) => (path.startsWith('/api') ? API_BASE + path : path)
+
 let refreshing: Promise<boolean> | null = null
 
 async function refresh(): Promise<boolean> {
   if (!session) return false
   refreshing ??= (async () => {
     try {
-      const r = await fetch('/api/auth/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh: session!.refresh }) })
+      const r = await fetch(abs('/api/auth/refresh'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh: session!.refresh }) })
       if (!r.ok) return false
       const j = await r.json()
       setSession({ ...session!, access: j.access, media: j.media })
@@ -85,7 +89,7 @@ async function refresh(): Promise<boolean> {
 type Body = BodyInit | Record<string, unknown> | unknown[] | null | undefined
 
 export async function api<T = any>(path: string, opts: { method?: string; body?: Body; query?: Record<string, string | number>; raw?: boolean } = {}): Promise<T> {
-  const url = path + (opts.query ? '?' + new URLSearchParams(Object.entries(opts.query).map(([k, v]) => [k, String(v)])).toString() : '')
+  const url = abs(path) + (opts.query ? '?' + new URLSearchParams(Object.entries(opts.query).map(([k, v]) => [k, String(v)])).toString() : '')
   const isForm = opts.body instanceof FormData || opts.body instanceof Blob || opts.body instanceof ArrayBuffer
   const send = () =>
     fetch(url, {
@@ -117,5 +121,5 @@ export async function api<T = any>(path: string, opts: { method?: string; body?:
 export function media(path: string | null | undefined, extra: Record<string, string | number> = {}) {
   if (!path) return ''
   const q = new URLSearchParams({ token: session?.media || '', ...Object.fromEntries(Object.entries(extra).map(([k, v]) => [k, String(v)])) })
-  return `${path}${path.includes('?') ? '&' : '?'}${q}`
+  return `${abs(path)}${path.includes('?') ? '&' : '?'}${q}`
 }

@@ -54,6 +54,16 @@ docker compose up -d --build
 
 Mở http://localhost:8080. Lần chạy đầu, API dựng ba video CCTV mẫu và nạp hai vụ án, mất khoảng một phút. Theo dõi bằng `docker compose logs -f api`. Muốn tăng số worker phân tích: `docker compose up -d --scale worker=3`.
 
+## Triển khai giao diện lên Vercel
+
+Vercel chỉ chạy được phần giao diện (thư mục `frontend`). Backend cần tiến trình worker chạy liên tục, ffmpeg, ổ đĩa lưu chứng cứ cố định, WebSocket và MySQL. Serverless của Vercel không có những thứ đó, nên backend phải đặt ở máy chủ riêng (VPS, Railway, Render, máy chủ nội bộ…) bằng Docker Compose như trên.
+
+1. Dựng backend trước và có địa chỉ HTTPS, ví dụ `https://api.vma.example.vn`. Trong `.env` của backend đặt `VMA_CORS_ORIGINS=https://<tên-dự-án>.vercel.app`, có thể khai nhiều địa chỉ cách nhau bằng dấu phẩy.
+2. Trên Vercel: New Project, chọn repo, đặt **Root Directory** là `video-master-ai/frontend`. Framework tự nhận là Vite, cấu hình build nằm trong `frontend/vercel.json`.
+3. Thêm biến môi trường `VITE_API_URL=https://api.vma.example.vn` (không có dấu `/` ở cuối), rồi Deploy.
+
+Biến `VITE_API_URL` được gắn vào lúc build, nên đổi địa chỉ backend thì phải deploy lại. Bỏ trống biến này thì giao diện gọi API cùng tên miền, đúng như khi chạy bằng Docker Compose. Backend bắt buộc chạy HTTPS, vì trình duyệt chặn trang HTTPS gọi sang API HTTP.
+
 ## Chạy môi trường phát triển
 
 Yêu cầu: Python 3.12+, Node 22+, ffmpeg và ffprobe trong PATH, MySQL 8 (hoặc `docker run -d --name vma-mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=vma -e MYSQL_USER=vma -e MYSQL_PASSWORD=vma -p 3306:3306 mysql:8.4`).
