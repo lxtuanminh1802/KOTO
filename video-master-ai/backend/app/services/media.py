@@ -91,6 +91,14 @@ def enhance(src: Path, dst: Path, opts: dict, start: float | None = None, end: f
     return ok
 
 
+def make_proxy(src: Path, dst: Path) -> bool:
+    """Browser playback copy, same timeline as the original (frame 0 = 0 s)."""
+    s = get_settings()
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    return _run([s.ffmpeg, "-y", "-v", "error", "-i", str(src), "-map", "0:v:0", "-c:v", "libvpx-vp9", "-deadline", "realtime", "-cpu-used", "8",
+                 "-row-mt", "1", "-b:v", "1500k", "-vf", "scale='min(1280,iw)':-2", "-an", str(dst)], timeout=6 * 3600)
+
+
 def lock_readonly(path: Path) -> None:
     """WORM-style protection for originals: read-only file. Production should add an immutable store (S3 object lock, etc.)."""
     os.chmod(path, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)

@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     audit_check_hours: int = 24  # NFR-SEC-03 daily chain check
     # Clip files: "copy" cuts on keyframes without re-encoding (Q08), "reencode" is frame accurate.
     clip_mode: str = "copy"
+    # Transcode a VP9/WebM playback proxy so any browser can play AVI/MKV/H.265 uploads (the original stays untouched).
+    playback_proxy: bool = True
 
     max_upload_bytes: int = 4 * 1024**3
     upload_chunk_bytes: int = 8 * 1024**2

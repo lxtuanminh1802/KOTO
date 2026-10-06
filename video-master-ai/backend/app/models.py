@@ -160,6 +160,7 @@ class Video(Base):
     display_name: Mapped[str] = mapped_column(String(255))
     original_file_name: Mapped[str] = mapped_column(String(255))
     storage_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    proxy_path: Mapped[str | None] = mapped_column(String(512), nullable=True)  # browser playback copy; the original is never served transcoded
     size_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
     sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     sha256_client: Mapped[str | None] = mapped_column(String(64), nullable=True)

@@ -73,6 +73,11 @@ def run_analysis(job_id: str) -> None:
             job.status, job.error, job.finished_at = JobStatus.FAILED, "video missing", utcnow()
             db.commit()
             return
+        if get_settings().playback_proxy and not v.proxy_path:
+            proxy = media.derived_path("proxy", f"{v.id}.webm")
+            if media.make_proxy(media.absolute(v.storage_path), proxy):
+                v.proxy_path = media.rel(proxy)
+                db.commit()
         engine = _engine_for(db, v)
         job.engine = engine.name
         v.state, v.progress, v.analysis_engine = VideoState.ANALYZING, 0, engine.name

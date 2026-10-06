@@ -35,7 +35,8 @@ def _download(p: Path, name: str) -> FileResponse:
 def stream(video_id: str, request: Request, user: User = Depends(media_user), db: Session = Depends(get_db)):
     v = get_video(db, video_id)
     require(user, "video.view", get_case(db, v.case_id))
-    path = _file(v.storage_path)
+    proxy = media.absolute(v.proxy_path) if v.proxy_path else None
+    path = proxy if proxy and proxy.exists() else _file(v.storage_path)
     size = path.stat().st_size
     ctype = mimetypes.guess_type(path.name)[0] or "video/mp4"
     rng = request.headers.get("range")

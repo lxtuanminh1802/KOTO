@@ -1,0 +1,2 @@
+# Small UI images are stored directly in git, not LFS.
+*.png !filter !diff !merge binary
