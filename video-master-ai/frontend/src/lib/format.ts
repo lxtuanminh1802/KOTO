@@ -57,12 +57,15 @@ export const isDarkHex = (hex: string) => {
 }
 
 export function copyText(text: string) {
-  return navigator.clipboard?.writeText(text).catch(() => {
+  const fallback = () => {
     const ta = document.createElement('textarea')
     ta.value = text
     document.body.append(ta)
     ta.select()
     document.execCommand('copy')
     ta.remove()
-  })
+  }
+  // navigator.clipboard is undefined on plain http (e.g. opened by LAN IP), not just rejected.
+  if (!navigator.clipboard) return Promise.resolve(fallback())
+  return navigator.clipboard.writeText(text).catch(fallback)
 }
