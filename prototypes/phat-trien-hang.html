@@ -1,0 +1,944 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+</head>
+<body style="margin:0">
+<title>Phát triển hãng</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: app shell của phần mềm nội bộ (sidebar + header trắng), vùng làm việc là pipeline Kanban/bảng, chi tiết hãng mở dạng ngăn kéo bên phải */
+:root{
+  --bg:#f2f4f7; --surface:#ffffff; --surface-2:#f7f8fa; --line:#e3e7ee; --line-2:#d3d9e3;
+  --fg:#1d2733; --muted:#66727f; --faint:#9aa4b0;
+  --navy:#0e2a47; --navy-fg:#ffffff; --navy-soft:#e7edf5;
+  --kt:#7c3aed; --kt-soft:#f1eafe; --xnk:#d9480f; --xnk-soft:#fff0e6; --kd:#0f8a7e; --kd-soft:#e3f6f3;
+  --ok:#1f9d55; --ok-soft:#e5f6ec; --warn:#b7791f; --warn-soft:#fdf3dd; --bad:#d64545; --bad-soft:#fdeaea;
+  --shadow:0 10px 40px rgba(14,42,71,.18);
+  --font:"Be Vietnam Pro","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f141b; --surface:#171e27; --surface-2:#1c2430; --line:#26303d; --line-2:#334051;
+  --fg:#e4e9ef; --muted:#9aa6b4; --faint:#6b7786;
+  --navy:#4d82c4; --navy-fg:#0b1118; --navy-soft:#1d2b3d;
+  --kt:#b18cff; --kt-soft:#2a2140; --xnk:#ff8f57; --xnk-soft:#3a2416; --kd:#4fd1c0; --kd-soft:#14322f;
+  --ok:#4ade80; --ok-soft:#173022; --warn:#f6c453; --warn-soft:#352b14; --bad:#f87171; --bad-soft:#3a1a1a;
+  --shadow:0 10px 40px rgba(0,0,0,.5); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f141b; --surface:#171e27; --surface-2:#1c2430; --line:#26303d; --line-2:#334051;
+  --fg:#e4e9ef; --muted:#9aa6b4; --faint:#6b7786;
+  --navy:#4d82c4; --navy-fg:#0b1118; --navy-soft:#1d2b3d;
+  --kt:#b18cff; --kt-soft:#2a2140; --xnk:#ff8f57; --xnk-soft:#3a2416; --kd:#4fd1c0; --kd-soft:#14322f;
+  --ok:#4ade80; --ok-soft:#173022; --warn:#f6c453; --warn-soft:#352b14; --bad:#f87171; --bad-soft:#3a1a1a;
+  --shadow:0 10px 40px rgba(0,0,0,.5); color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:13.5px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+/* Shell */
+.app{display:flex;min-height:100%}
+.side{width:216px;flex:none;background:var(--surface);border-right:1px solid var(--line);padding:16px 10px;display:flex;flex-direction:column;gap:4px}
+.brand{font-weight:700;font-size:15px;padding:4px 10px 14px;letter-spacing:.02em;color:var(--navy)}
+.brand small{display:block;font-weight:500;font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.nav-h{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);padding:12px 10px 4px}
+.nav{display:flex;align-items:center;gap:8px;border:0;background:none;text-align:left;padding:8px 10px;border-radius:6px;color:var(--muted);font-weight:500}
+.nav:hover{background:var(--surface-2);color:var(--fg)}
+.nav.on{background:var(--navy-soft);color:var(--navy);font-weight:600}
+.nav .cnt{margin-left:auto;font-size:11px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:0 7px;color:var(--muted)}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding-block:12px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.top h1{font-size:17px;margin:0;font-weight:600;text-wrap:balance}
+.top .who{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+.content{padding-block:16px 40px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px;min-width:0}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);border-radius:6px;padding:7px 12px;font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--navy)}
+.btn.pri{background:var(--navy);border-color:var(--navy);color:var(--navy-fg)}
+.btn.pri:hover{filter:brightness(1.12)}
+.btn.ghost{border-color:transparent;background:none;color:var(--muted)}
+.btn.ghost:hover{color:var(--fg);background:var(--surface-2)}
+.btn.danger{color:var(--bad);border-color:var(--bad-soft)}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
+.btn.sm{padding:4px 9px;font-size:12.5px}
+.ico{width:15px;height:15px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.toolbar .sp{flex:1}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:6px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:6px 12px;color:var(--muted);font-weight:500}
+.seg button.on{background:var(--navy);color:var(--navy-fg)}
+.field{border:1px solid var(--line-2);background:var(--surface);border-radius:6px;padding:7px 10px;min-width:0}
+.field:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px var(--navy-soft)}
+textarea.field{resize:vertical;min-height:70px;width:100%}
+.search{width:240px;max-width:100%}
+
+/* Stage summary strip */
+.flow{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.flow button{border:0;background:none;text-align:left;padding:10px 14px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:2px;position:relative}
+.flow button:last-child{border-right:0}
+.flow button:hover{background:var(--surface-2)}
+.flow button.on{background:var(--navy-soft)}
+.flow .n{font-size:22px;font-weight:600;line-height:1.1}
+.flow .t{font-size:12px;color:var(--muted);line-height:1.3}
+.flow .step{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);display:flex;gap:6px;align-items:center}
+
+/* Department chips */
+.dept{display:inline-flex;align-items:center;font-size:10.5px;font-weight:600;letter-spacing:.04em;border-radius:4px;padding:1px 6px;line-height:1.5}
+.dept.KT{color:var(--kt);background:var(--kt-soft)}
+.dept.XNK{color:var(--xnk);background:var(--xnk-soft)}
+.dept.KD{color:var(--kd);background:var(--kd-soft)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;border-radius:4px;padding:1px 7px;border:1px solid var(--line-2);color:var(--muted);white-space:nowrap}
+.pill.bad{color:var(--bad);border-color:var(--bad);background:var(--bad-soft)}
+.pill.ok{color:var(--ok);border-color:var(--ok);background:var(--ok-soft)}
+.pill.warn{color:var(--warn);border-color:var(--warn);background:var(--warn-soft)}
+.pill.navy{color:var(--navy);border-color:var(--navy);background:var(--navy-soft)}
+
+/* Avatars */
+.avs{display:inline-flex}
+.av{width:24px;height:24px;border-radius:50%;display:inline-grid;place-items:center;font-size:8.5px;font-weight:700;color:#fff;border:2px solid var(--surface);margin-left:-6px;flex:none}
+.avs .av:first-child{margin-left:0}
+.av.lg{width:30px;height:30px;font-size:10px;margin-left:0}
+
+/* Kanban */
+.board-wrap{overflow-x:auto;padding-bottom:6px}
+.board{display:grid;grid-template-columns:repeat(7,minmax(250px,1fr));gap:12px;min-width:min-content}
+.col{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;min-height:200px}
+.col-h{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:3px}
+.col-h .r{display:flex;align-items:center;gap:6px}
+.col-h b{font-size:13px;font-weight:600}
+.col-h .c{margin-left:auto;font-size:12px;color:var(--muted)}
+.col-h .s{font-size:11.5px;color:var(--muted)}
+.col.hold{background:transparent;border-style:dashed}
+.cards{padding:10px;display:flex;flex-direction:column;gap:8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:10px 11px;display:flex;flex-direction:column;gap:7px;text-align:left;width:100%}
+.card:hover{border-color:var(--navy);box-shadow:0 2px 10px rgba(14,42,71,.08)}
+.card .nm{font-weight:600;font-size:13.5px;line-height:1.3}
+.card .meta{color:var(--muted);font-size:12px;display:flex;flex-wrap:wrap;gap:4px 10px}
+.card .ft{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted)}
+.card .ft .r{margin-left:auto;display:flex;gap:9px;align-items:center}
+.card .ft .r span{display:inline-flex;gap:3px;align-items:center}
+.bar{height:4px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--navy);border-radius:3px}
+.card.late{box-shadow:inset 3px 0 0 var(--bad)}
+.empty-col{color:var(--faint);font-size:12px;text-align:center;padding:16px 6px}
+
+/* Tables */
+.tbl-wrap{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:1050px}
+th{font-weight:600;font-size:12.5px;text-align:left;padding:12px;border-bottom:1px solid var(--line);background:var(--surface);white-space:nowrap}
+td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr.click{cursor:pointer}
+tr.fresh{background:var(--ok-soft)}
+th.c,td.c{text-align:center}
+
+/* Drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,20,32,.38);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(1040px,100%);background:var(--bg);z-index:21;display:flex;flex-direction:column;box-shadow:var(--shadow);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.d-head{background:var(--surface);border-bottom:1px solid var(--line);padding:14px 20px 0;display:flex;flex-direction:column;gap:12px}
+.d-title{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.d-title h2{margin:0;font-size:19px;font-weight:600;line-height:1.25}
+.d-title .sub{color:var(--muted);font-size:12.5px;display:flex;gap:4px 12px;flex-wrap:wrap;margin-top:3px}
+.d-title .acts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.stepper{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.stp{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--faint);border:0;background:none;text-align:left;padding:0 0 2px}
+.stp i{height:5px;border-radius:3px;background:var(--line)}
+.stp.done{color:var(--muted)} .stp.done i{background:var(--ok)}
+.stp.cur{color:var(--fg);font-weight:600} .stp.cur i{background:var(--navy)}
+.stp.fail i{background:var(--bad)}
+.stp span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tabs{display:flex;gap:2px;overflow-x:auto;margin:0 -4px}
+.tab{border:0;background:none;padding:9px 12px;color:var(--muted);font-weight:500;border-bottom:2px solid transparent;white-space:nowrap;display:inline-flex;gap:6px;align-items:center}
+.tab.on{color:var(--navy);border-bottom-color:var(--navy);font-weight:600}
+.tab .b{font-size:10.5px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:0 6px;color:var(--muted)}
+.d-body{flex:1;overflow-y:auto;padding:18px 20px 40px;display:flex;flex-direction:column;gap:14px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.panel-h{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.panel-h h3{margin:0;font-size:14px;font-weight:600}
+.panel-h .r{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.panel-b{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:14px;align-items:start}
+.hint{color:var(--muted);font-size:12.5px}
+.note{font-size:12.5px;padding:9px 12px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
+.note.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.note.bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+.note.ok{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
+
+/* Checklist */
+.chk{display:flex;flex-direction:column}
+.chk label{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.chk label:last-child{border-bottom:0}
+.chk input{margin-top:3px;accent-color:var(--navy);width:15px;height:15px;flex:none}
+.chk .done-t{color:var(--muted);text-decoration:line-through}
+.chk .who{margin-left:auto;font-size:11.5px;color:var(--faint);white-space:nowrap}
+.req{display:flex;flex-wrap:wrap;gap:6px}
+.gate{border:1px solid var(--line-2);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--surface-2)}
+.gate .r{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Form */
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 22px}
+.form .full{grid-column:1/-1}
+.fl{display:flex;flex-direction:column;gap:6px}
+.fl label{font-weight:600;font-size:13px}
+.fl label .star{color:var(--bad);margin-right:3px}
+.fl .field{width:100%}
+.fl .field:disabled{background:var(--surface-2);color:var(--faint)}
+.sec-t{grid-column:1/-1;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:600;padding-top:4px;border-top:1px solid var(--line);margin-top:4px;padding-top:12px}
+.sec-t:first-child{border-top:0;margin-top:0;padding-top:0}
+
+/* Files */
+.drop{border:1.5px dashed var(--line-2);border-radius:8px;padding:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface-2)}
+.drop.over{border-color:var(--navy);background:var(--navy-soft)}
+.frow{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.frow:last-child{border-bottom:0}
+.fic{width:34px;height:38px;border-radius:5px;display:grid;place-items:center;font-size:9.5px;font-weight:700;letter-spacing:.03em;flex:none;color:#fff}
+.frow .nm{font-weight:500;word-break:break-word}
+.frow .mt{font-size:12px;color:var(--muted)}
+.frow .r{margin-left:auto;display:flex;gap:6px;align-items:center;flex:none}
+.fgrp{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:600;padding-top:6px}
+
+/* Email */
+.mail-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.gdot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+.thread{border-bottom:1px solid var(--line)}
+.thread:last-child{border-bottom:0}
+.th-row{display:grid;grid-template-columns:150px minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:11px 16px;border:0;background:none;width:100%;text-align:left}
+.th-row:hover{background:var(--surface-2)}
+.th-row .fr{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.th-row .sj{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.th-row .sj em{font-style:normal;color:var(--muted)}
+.th-row .dt{font-size:12px;color:var(--muted);white-space:nowrap}
+.msgs{padding:4px 16px 14px 16px;display:flex;flex-direction:column;gap:10px;background:var(--surface-2)}
+.msg{background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:12px 14px}
+.msg .h{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+.msg .h b{font-weight:600}
+.msg .h .ad{color:var(--muted);font-size:12px}
+.msg .h .dt{margin-left:auto;color:var(--muted);font-size:12px}
+.msg p{margin:0 0 6px;white-space:pre-wrap}
+.att{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line-2);border-radius:6px;padding:5px 8px;font-size:12px;margin:4px 6px 0 0}
+.lbl{font-size:10.5px;border-radius:3px;padding:0 5px;background:var(--navy-soft);color:var(--navy);font-weight:600;margin-right:6px}
+
+/* Cost calc */
+.ql{min-width:640px}
+.ql td,.ql th{padding:7px 8px}
+.ql input{width:100%;border:1px solid var(--line);border-radius:5px;padding:5px 7px;background:var(--surface)}
+.ql input.r{text-align:right}
+.calc{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kv{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:7px}
+.kv span{font-size:11.5px;color:var(--muted)}
+.kv b{font-size:16px;font-weight:600}
+.kv.hl{background:var(--navy-soft);border-color:transparent}
+.kv.hl b{color:var(--navy)}
+.inl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+
+/* Timeline */
+.tl{display:flex;flex-direction:column}
+.tl-i{display:grid;grid-template-columns:92px 14px minmax(0,1fr);gap:10px;padding:7px 0}
+.tl-i .d{font-size:12px;color:var(--muted);text-align:right}
+.tl-i .dot{width:9px;height:9px;border-radius:50%;background:var(--line-2);margin-top:6px;justify-self:center}
+.tl-i .dot.KT{background:var(--kt)} .tl-i .dot.XNK{background:var(--xnk)} .tl-i .dot.KD{background:var(--kd)}
+
+/* Modal */
+.modal{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:16px;background:rgba(10,20,32,.45)}
+.mbox{background:var(--surface);border-radius:10px;width:min(900px,100%);max-height:calc(100% - 20px);display:flex;flex-direction:column;box-shadow:var(--shadow);overflow:hidden}
+.mbox.sm{width:min(520px,100%)}
+.m-h{background:var(--line);text-align:center;font-weight:600;letter-spacing:.04em;padding:13px 16px;font-size:14px;text-transform:uppercase}
+.m-b{padding:18px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.m-f{display:flex;justify-content:center;gap:14px;padding:14px 20px;border-top:1px solid var(--line)}
+.m-f .btn{min-width:160px;justify-content:center}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:7px;z-index:40;font-weight:500;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+.proto{font-size:11px;color:var(--warn);background:var(--warn-soft);border-radius:4px;padding:1px 6px;font-weight:600}
+
+@media (max-width:1100px){.flow{grid-template-columns:repeat(3,minmax(0,1fr))}.flow button:nth-child(3){border-right:0}.flow button:nth-child(-n+3){border-bottom:1px solid var(--line)}.grid2{grid-template-columns:minmax(0,1fr)}.calc,.inl{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){
+  .side{display:none}
+  .form{grid-template-columns:minmax(0,1fr)}
+  .flow{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .flow button{border-right:1px solid var(--line)!important;border-bottom:1px solid var(--line)}
+  .stepper span{display:none}
+  .th-row{grid-template-columns:minmax(0,1fr) auto}.th-row .fr{grid-column:1/-1}
+  .d-head,.d-body{padding-left:16px;padding-right:16px}
+  .top .who span{display:none}
+  .mobile-nav{display:flex!important}
+}
+.mobile-nav{display:none}
+@media (prefers-reduced-motion:no-preference){.drawer.enter{animation:slide .22s ease-out}@keyframes slide{from{transform:translateX(30px);opacity:.6}to{transform:none;opacity:1}}}
+</style>
+
+<div class="app" id="app"></div>
+<div id="layer"></div>
+<div id="toast"></div>
+
+<script>
+/* ======================= Danh mục ======================= */
+const STAGES = [
+  {id:'s1', name:'Tìm kiếm & tiếp cận', short:'Tìm kiếm', dept:'KT',
+   desc:'P.KT tìm hãng theo mảng sản phẩm, liên hệ ban đầu, tìm hiểu nhanh đối thủ.',
+   tasks:['Xác định mảng sản phẩm / nhu cầu dự án','Tìm kiếm hãng, thu thập thông tin cơ bản','Gửi email giới thiệu công ty, liên hệ đầu mối','Tìm hiểu nhanh đối thủ trên thị trường'], docs:[]},
+  {id:'s2', name:'Trao đổi kỹ thuật', short:'Kỹ thuật', dept:'KT',
+   desc:'Xin catalog, họp kỹ thuật với hãng, đánh giá tính năng và TSKT so với yêu cầu.',
+   tasks:['Xin catalog, datasheet','Họp kỹ thuật với hãng','Đánh giá tính năng / TSKT so với yêu cầu','Đề xuất demo (mượn thiết bị, demo online hoặc video)'], docs:['Catalog','Datasheet']},
+  {id:'s3', name:'Xin báo giá', short:'Báo giá', dept:'KT',
+   desc:'Gửi yêu cầu báo giá, lập cấu hình kỹ thuật, chuyển hồ sơ cho P.XNK.',
+   tasks:['Gửi yêu cầu báo giá cho hãng','Nhận báo giá của hãng (EXW / FOB / CIF)','Lập bảng cấu hình kỹ thuật','Chuyển hồ sơ cho P.XNK'], docs:['Báo giá hãng','Cấu hình kỹ thuật']},
+  {id:'s4', name:'Đánh giá XNK', short:'Đánh giá XNK', dept:'XNK', gate:true,
+   desc:'P.XNK đánh giá khả thi nhập khẩu, chứng từ CO/CQ, tính giá dự án, khả năng bảo vệ dự án.',
+   tasks:['Kiểm tra HS code, giấy phép, kiểm tra chuyên ngành','Xác nhận hãng cấp được CO, CQ','Tính giá dự án (giá về kho)','Đánh giá khả năng bảo vệ dự án'], docs:['Bảng tính giá']},
+  {id:'s5', name:'Đánh giá thị trường', short:'Đánh giá KD', dept:'KD', gate:true,
+   desc:'PKD đánh giá nhu cầu thị trường, giá có đủ cạnh tranh, chốt Go / No-go.',
+   tasks:['Đánh giá nhu cầu thị trường','So sánh giá với đối thủ','Hoàn thiện bảng so sánh đối thủ','Chốt Go / No-go'], docs:['So sánh đối thủ']},
+  {id:'s6', name:'Đàm phán & ký kết', short:'Ký kết', dept:'XNK',
+   desc:'P.XNK ký NDA, đàm phán loại hình hợp tác (Reseller / Distributor / Độc quyền) và ký kết.',
+   tasks:['Ký NDA','Đàm phán loại hình hợp tác','Rà soát thỏa thuận phân phối','Ký kết hợp tác'], docs:['NDA','Thỏa thuận phân phối']},
+];
+const SIDX = Object.fromEntries(STAGES.map((s,i)=>[s.id,i]));
+const DEPTS = {KT:'P. Kỹ thuật', XNK:'P. Xuất nhập khẩu', KD:'P. Kinh doanh'};
+const USERS = {
+  LXTM:{name:'Lê Xuân Tuấn Minh', dept:'KT', c:'#d6336c'},
+  NHT:{name:'Nguyễn Hữu Thành', dept:'KT', c:'#f76707'},
+  VNA:{name:'Vũ Ngọc Anh', dept:'KT', c:'#ae3ec9'},
+  CXN:{name:'Cao Xuân Nam', dept:'XNK', c:'#e8590c'},
+  NMH:{name:'Nguyễn Minh Hằng', dept:'XNK', c:'#c2255c'},
+  KTD:{name:'Khúc Thu Dung', dept:'KD', c:'#12b886'},
+  TVH:{name:'Trần Văn Hiếu', dept:'KD', c:'#1c7ed6'},
+};
+const ME = 'LXTM';
+const GROUPS = ['NSX','NPP','Đại lý'];
+const MANGS = ['A05','A06','C09','An Ninh','Thiết bị an ninh','UAV','Khác'];
+const COUNTRIES = ['Mỹ','Anh','Đức','Pháp','Ý','Thụy Điển','Phần Lan','Israel','Nhật Bản','Hàn Quốc','Singapore','Trung Quốc','Việt Nam'];
+const COOPS = ['Chưa xác định','NDA','Reseller','Distributor','Độc quyền'];
+const SCHED = ['Tuần','Tháng','Quý','Năm'];
+const FILECATS = ['Catalog','Datasheet','HDSD','Báo giá hãng','Cấu hình kỹ thuật','Bảng tính giá','So sánh đối thủ','CO / CQ mẫu','NDA','Thỏa thuận phân phối','Khác'];
+const HOLD_REASONS = ['Không đáp ứng TSKT','Giá không cạnh tranh','Không khả thi nhập khẩu','Hãng không phản hồi','Thị trường không có nhu cầu','Khác'];
+
+/* ======================= Tiện ích ======================= */
+const TODAY = new Date(); TODAY.setHours(12,0,0,0);
+const iso = d => { const z=new Date(d); return `${z.getFullYear()}-${String(z.getMonth()+1).padStart(2,'0')}-${String(z.getDate()).padStart(2,'0')}`; };
+const ago = n => { const d=new Date(TODAY); d.setDate(d.getDate()-n); return iso(d); };
+const ahead = n => ago(-n);
+const fmtD = s => s ? s.slice(0,10).split('-').reverse().join('/') : '—';
+const daysSince = s => Math.max(0,Math.round((TODAY - new Date(s+'T12:00:00'))/86400000));
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2,9);
+const vnd = n => Math.round(n||0).toLocaleString('vi-VN');
+const money = (n,cur) => (cur==='VND' ? vnd(n)+' ₫' : (n||0).toLocaleString('en-US',{maximumFractionDigits:2})+' '+cur);
+const domainOf = w => (w||'').replace(/^https?:\/\//,'').replace(/^www\./,'').split('/')[0];
+const av = (k,lg) => { const u=USERS[k]; return u?`<span class="av${lg?' lg':''}" style="background:${u.c};${k.length>3?'font-size:'+(lg?'8.5px':'7px')+';letter-spacing:-.03em':''}" title="${esc(u.name)} · ${DEPTS[u.dept]}">${k}</span>`:''; };
+const avs = arr => `<span class="avs">${(arr||[]).map(k=>av(k)).join('')}</span>`;
+const I = {
+  plus:'<path d="M12 5v14M5 12h14"/>', up:'<path d="M12 19V5M5 12l7-7 7 7"/>', down:'<path d="M12 5v14M5 12l7 7 7-7"/>',
+  mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>', file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>', arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>', back:'<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  sync:'<path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/>',
+  pause:'<path d="M9 5v14M15 5v14"/>', check:'<path d="m5 12 5 5 9-10"/>', clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  board:'<rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="10" rx="1"/><rect x="17" y="4" width="4" height="13" rx="1"/>',
+  list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>', send:'<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
+  save:'<path d="M5 21h14a2 2 0 0 0 2-2V8l-5-5H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"/><path d="M7 3v5h8M7 21v-8h10v8"/>', trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>',
+  undo:'<path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7L3 9"/>', import:'<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>', log:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+};
+const ic = k => `<svg class="ico" viewBox="0 0 24 24">${I[k]}</svg>`;
+const fileColor = n => { const e=(n.split('.').pop()||'').toLowerCase(); return {pdf:'#d64545',xlsx:'#1f9d55',xls:'#1f9d55',docx:'#2563eb',doc:'#2563eb',pptx:'#d9480f',zip:'#6b7280',png:'#7c3aed',jpg:'#7c3aed'}[e]||'#64748b'; };
+const fileExt = n => (n.split('.').pop()||'FILE').toUpperCase().slice(0,4);
+
+/* ======================= Dữ liệu mẫu ======================= */
+function tasksUpTo(stage, partial){ // tick các bước trước stage, và partial việc ở stage hiện tại
+  const t={}; STAGES.forEach((s,i)=>{ const cur=SIDX[stage]; t[s.id]=s.tasks.map((_,j)=> i<cur ? true : i===cur ? j<partial : false); }); return t;
+}
+function mail(from, fromName, d, body, atts){ return {from, fromName, date:d, body, attachments:atts||[]}; }
+function V(o){
+  const base = {id:uid(), group:'NSX', coopType:'Chưa xác định', schedule:'Tháng', signDate:'', expireDate:'', note:'', desc:'', status:'active', priority:'Thường',
+    gates:{}, files:[], emails:[], log:[], label:'', hold:null,
+    quote:{currency:'USD', incoterm:'FOB', fx:25450, freight:0, insurance:0, duty:0, vat:10, other:0, margin:18, lines:[]},
+    xnk:{hs:'', license:'Không yêu cầu', co:'Chưa xác nhận', cq:'Chưa xác nhận', special:'', comment:''},
+    market:{need:3, target:0, comps:[], comment:''}};
+  const v = Object.assign(base,o);
+  v.tasks = o.tasks || tasksUpTo(v.stage, o.partial||0);
+  v.label = 'HÃNG/'+v.name.split(' ')[0].toUpperCase();
+  return v;
+}
+const SAMPLE = [
+  V({name:'Nordvik Thermal AB', website:'www.nordvik-thermal.se', country:'Thụy Điển', mang:'Thiết bị an ninh', stage:'s2', partial:2, stageSince:ago(6), created:ago(19), deadline:ahead(9), priority:'Gấp',
+    project:'Camera nhiệt giám sát biên giới', contact:{name:'Erik Lindqvist', title:'Export Sales Manager', email:'erik.lindqvist@nordvik-thermal.se', phone:'+46 8 555 120 44'},
+    owners:{XNK:['CXN'], KD:['KTD'], KT:['LXTM']}, desc:'Hãng sản xuất camera ảnh nhiệt tầm xa và module cảm biến LWIR, có dải sản phẩm dân sự và an ninh.',
+    files:[{id:uid(),name:'Nordvik_Catalog_2026_EN.pdf',cat:'Catalog',size:'8,4 MB',date:ago(11),by:'LXTM',src:'Gmail'},{id:uid(),name:'NV-640LR_Datasheet.pdf',cat:'Datasheet',size:'1,2 MB',date:ago(4),by:'LXTM',src:'Gmail'}],
+    emails:[
+      {id:uid(), subject:'Introduction – AIPT Vietnam / partnership on long-range thermal cameras', unread:false, msgs:[
+        mail('me','Lê Xuân Tuấn Minh',ago(18),'Dear Mr. Lindqvist,\nWe are a system integrator in Vietnam working with security agencies. We are interested in your long-range thermal series for a border surveillance project. Could you share your latest catalog?\nBest regards,\nMinh'),
+        mail('erik.lindqvist@nordvik-thermal.se','Erik Lindqvist',ago(11),'Dear Minh,\nThanks for reaching out. Please find attached our 2026 catalog. Happy to set up a technical call next week.\nBest,\nErik',[{name:'Nordvik_Catalog_2026_EN.pdf',size:'8,4 MB'}]),
+      ]},
+      {id:uid(), subject:'Technical call – NV-640LR detection range & integration', unread:true, msgs:[
+        mail('me','Lê Xuân Tuấn Minh',ago(6),'Hi Erik,\nThank you for the call today. As discussed, please send the datasheet of NV-640LR and the ONVIF integration notes.\nMinh'),
+        mail('erik.lindqvist@nordvik-thermal.se','Erik Lindqvist',ago(4),'Hi Minh,\nAttached the datasheet. ONVIF Profile S/T supported. We can lend a demo unit from our Singapore office for 2 weeks.\nErik',[{name:'NV-640LR_Datasheet.pdf',size:'1,2 MB'},{name:'ONVIF_Integration_Note.pdf',size:'640 KB'}]),
+      ]},
+    ],
+    log:[{d:ago(19),who:'LXTM',t:'Tạo hồ sơ hãng'},{d:ago(11),who:'LXTM',t:'Lưu catalog từ Gmail vào Tài liệu'},{d:ago(6),who:'LXTM',t:'Chuyển sang bước Trao đổi kỹ thuật'}]}),
+  V({name:'Helix Forensics Ltd', website:'www.helixforensics.co.uk', country:'Anh', mang:'A05', stage:'s4', partial:2, stageSince:ago(3), created:ago(41), deadline:ahead(4), priority:'Gấp',
+    project:'Thiết bị trích xuất dữ liệu di động', contact:{name:'Sarah Whitmore', title:'Channel Director APAC', email:'s.whitmore@helixforensics.co.uk', phone:'+44 20 7946 0321'},
+    owners:{XNK:['NMH','CXN'], KD:['TVH'], KT:['NHT']}, desc:'Giải pháp giám định số: trích xuất, phân tích dữ liệu thiết bị di động và máy tính.',
+    files:[{id:uid(),name:'Helix_Product_Portfolio.pdf',cat:'Catalog',size:'5,1 MB',date:ago(35),by:'NHT',src:'Gmail'},{id:uid(),name:'Helix_Quotation_Q-26-1184.pdf',cat:'Báo giá hãng',size:'310 KB',date:ago(8),by:'NHT',src:'Gmail'},{id:uid(),name:'Cau_hinh_ky_thuat_Helix_Mobile.docx',cat:'Cấu hình kỹ thuật',size:'96 KB',date:ago(5),by:'NHT',src:'Tải lên'}],
+    quote:{currency:'GBP', incoterm:'FOB', fx:33200, freight:420, insurance:60, duty:0, vat:10, other:6500000, margin:22, lines:[
+      {model:'Helix Mobile Kit Pro', desc:'Bộ trích xuất dữ liệu di động, kèm license 1 năm', qty:2, price:11800},
+      {model:'Helix Analyze Desktop', desc:'Phần mềm phân tích, license 1 năm', qty:2, price:3900},
+      {model:'Training L1', desc:'Đào tạo online 3 ngày', qty:1, price:2400}]},
+    xnk:{hs:'8471.30.20', license:'Cần giấy phép mật mã dân sự (Ban Cơ yếu)', co:'Có (Form UK)', cq:'Có', special:'Phần mềm có chức năng mã hóa, cần hồ sơ xin phép NK sản phẩm mật mã dân sự.', comment:''},
+    emails:[{id:uid(), subject:'RE: Quotation request – Mobile Kit Pro x2', unread:false, msgs:[
+      mail('me','Nguyễn Hữu Thành',ago(12),'Dear Sarah,\nPlease quote 2 units of Mobile Kit Pro with Analyze Desktop, FOB London, incl. 1-year license.\nThanh'),
+      mail('s.whitmore@helixforensics.co.uk','Sarah Whitmore',ago(8),'Dear Thanh,\nPlease find our quotation Q-26-1184 attached. Valid 60 days. CO and CQ can be provided.\nSarah',[{name:'Helix_Quotation_Q-26-1184.pdf',size:'310 KB'}])]}],
+    log:[{d:ago(41),who:'NHT',t:'Tạo hồ sơ hãng'},{d:ago(8),who:'NHT',t:'Nhận báo giá Q-26-1184'},{d:ago(3),who:'NHT',t:'Chuyển hồ sơ cho P.XNK đánh giá'}]}),
+  V({name:'Aerolynx UAV GmbH', website:'www.aerolynx.de', country:'Đức', mang:'UAV', stage:'s5', partial:1, stageSince:ago(5), created:ago(58), deadline:ahead(12),
+    project:'UAV trinh sát tầm ngắn', contact:{name:'Jonas Becker', title:'Head of Sales Asia', email:'j.becker@aerolynx.de', phone:'+49 89 2190 7781'},
+    owners:{XNK:['CXN'], KD:['KTD','TVH'], KT:['VNA']}, desc:'Hãng UAV cánh cố định và VTOL cho trinh sát, cứu hộ.',
+    gates:{s4:{result:'OK', by:'CXN', date:ago(5), comment:'Không thuộc danh mục cấm. CO Đức, CQ hãng cấp. Thuế NK 0% theo EVFTA với HS 8806.'}},
+    quote:{currency:'EUR', incoterm:'FCA', fx:29100, freight:1800, insurance:240, duty:0, vat:10, other:12000000, margin:20, lines:[{model:'Lynx VT-2 Kit', desc:'2 UAV, trạm điều khiển, payload EO/IR', qty:1, price:86500}]},
+    xnk:{hs:'8806.22.00', license:'Giấy phép NK tàu bay không người lái (BQP)', co:'Có (EUR.1)', cq:'Có', special:'', comment:'Đã kiểm tra.'},
+    market:{need:4, target:3150000000, comps:[{name:'Đối thủ A (UAV Mỹ)', price:3600000000},{name:'Đối thủ B (UAV Trung Quốc)', price:2100000000}], comment:''},
+    files:[{id:uid(),name:'Aerolynx_VT2_Brochure.pdf',cat:'Catalog',size:'12 MB',date:ago(50),by:'VNA',src:'Gmail'},{id:uid(),name:'VT2_Quote_EUR.pdf',cat:'Báo giá hãng',size:'220 KB',date:ago(20),by:'VNA',src:'Gmail'},{id:uid(),name:'Tinh_gia_Aerolynx_VT2.xlsx',cat:'Bảng tính giá',size:'48 KB',date:ago(6),by:'CXN',src:'Tải lên'}],
+    log:[{d:ago(58),who:'VNA',t:'Tạo hồ sơ hãng'},{d:ago(5),who:'CXN',t:'Đánh giá XNK: OK'},{d:ago(5),who:'CXN',t:'Chuyển sang Đánh giá thị trường'}]}),
+  V({name:'Sentra Vision Co., Ltd', website:'www.sentravision.kr', country:'Hàn Quốc', mang:'An Ninh', stage:'s1', partial:2, stageSince:ago(2), created:ago(2), deadline:ahead(20),
+    project:'Camera AI nhận diện khuôn mặt', contact:{name:'Kim Ji-hoon', title:'Overseas Sales', email:'jh.kim@sentravision.kr', phone:'+82 2 6012 4410'}, owners:{XNK:['NMH'], KD:[], KT:['LXTM']},
+    log:[{d:ago(2),who:'LXTM',t:'Tạo hồ sơ hãng'}]}),
+  V({name:'Kairos Acoustics KK', website:'www.kairos-acoustics.jp', country:'Nhật Bản', mang:'Thiết bị an ninh', stage:'s3', partial:1, stageSince:ago(16), created:ago(37), deadline:ago(2),
+    project:'Thiết bị ghi âm chuyên dụng', contact:{name:'Takeshi Mori', title:'International Business', email:'t.mori@kairos-acoustics.jp', phone:'+81 3 4520 7712'}, owners:{XNK:['NMH'], KD:['KTD'], KT:['NHT']},
+    files:[{id:uid(),name:'Kairos_Catalog_EN.pdf',cat:'Catalog',size:'3,3 MB',date:ago(30),by:'NHT',src:'Gmail'}],
+    log:[{d:ago(37),who:'NHT',t:'Tạo hồ sơ hãng'},{d:ago(16),who:'NHT',t:'Chuyển sang bước Xin báo giá'}]}),
+  V({name:'Quantis Radio Systems', website:'www.quantisradio.co.il', country:'Israel', mang:'C09', stage:'s6', partial:1, stageSince:ago(9), created:ago(96), deadline:ahead(15), coopType:'Distributor',
+    project:'Thiết bị thông tin vô tuyến', contact:{name:'Avi Shapira', title:'VP Business Development', email:'avi@quantisradio.co.il', phone:'+972 3 761 2290'}, owners:{XNK:['CXN','NMH'], KD:['TVH'], KT:['VNA']},
+    gates:{s4:{result:'OK',by:'NMH',date:ago(30),comment:'Khả thi. CO Israel, CQ hãng.'}, s5:{result:'OK',by:'TVH',date:ago(12),comment:'Giá thấp hơn đối thủ 9%, nhu cầu rõ ở mảng C09.'}},
+    files:[{id:uid(),name:'Quantis_NDA_signed.pdf',cat:'NDA',size:'410 KB',date:ago(7),by:'CXN',src:'Gmail'},{id:uid(),name:'Quantis_Catalog.pdf',cat:'Catalog',size:'6,0 MB',date:ago(80),by:'VNA',src:'Gmail'}],
+    log:[{d:ago(96),who:'VNA',t:'Tạo hồ sơ hãng'},{d:ago(12),who:'TVH',t:'Đánh giá thị trường: OK'},{d:ago(7),who:'CXN',t:'Đã ký NDA'}]}),
+  V({name:'Tessaro Lab Instruments', website:'www.tessarolab.it', country:'Ý', mang:'A06', stage:'s6', partial:4, stageSince:ago(14), created:ago(130), deadline:ahead(2), coopType:'Độc quyền', signDate:ago(1), expireDate:ahead(729), schedule:'Quý',
+    project:'Thiết bị phân tích vết', contact:{name:'Giulia Ferri', title:'Export Manager', email:'g.ferri@tessarolab.it', phone:'+39 02 8901 4471'}, owners:{XNK:['NMH'], KD:['KTD'], KT:['LXTM']},
+    desc:'Thiết bị phân tích vết và thuốc thử dùng trong giám định hình sự.',
+    gates:{s4:{result:'OK',by:'NMH',date:ago(40),comment:'OK.'}, s5:{result:'OK',by:'KTD',date:ago(20),comment:'Go. Đề xuất ký độc quyền.'}},
+    files:[{id:uid(),name:'Tessaro_NDA.pdf',cat:'NDA',size:'380 KB',date:ago(13),by:'NMH',src:'Gmail'},{id:uid(),name:'Exclusive_Distribution_Agreement_Tessaro_AIPT.pdf',cat:'Thỏa thuận phân phối',size:'1,1 MB',date:ago(1),by:'NMH',src:'Tải lên'}],
+    log:[{d:ago(130),who:'LXTM',t:'Tạo hồ sơ hãng'},{d:ago(1),who:'NMH',t:'Ký thỏa thuận phân phối độc quyền'}]}),
+  V({name:'Veridian Optics Inc.', website:'www.veridianoptics.com', country:'Mỹ', mang:'A06', stage:'s4', partial:1, stageSince:ago(22), created:ago(70), status:'hold',
+    hold:{stage:'s4', reason:'Không khả thi nhập khẩu', by:'CXN', date:ago(18), comment:'Sản phẩm thuộc danh mục ITAR, hãng không xin được giấy phép xuất khẩu sang Việt Nam.'},
+    gates:{s4:{result:'NotOK',by:'CXN',date:ago(18),comment:'ITAR. Không khả thi.'}},
+    project:'Ống nhòm nhìn đêm', contact:{name:'Mark Ellison', title:'International Sales', email:'mellison@veridianoptics.com', phone:'+1 703 555 0188'}, owners:{XNK:['CXN'], KD:['TVH'], KT:['VNA']},
+    log:[{d:ago(70),who:'VNA',t:'Tạo hồ sơ hãng'},{d:ago(18),who:'CXN',t:'Đánh giá XNK: Không đạt'}]}),
+  V({name:'Polaris SecureComms Oy', website:'www.polarissecure.fi', country:'Phần Lan', mang:'A05', stage:'s1', partial:0, stageSince:ago(1), created:ago(1), deadline:ahead(25),
+    project:'Liên lạc mã hóa', contact:{name:'', title:'', email:'', phone:''}, owners:{XNK:[], KD:[], KT:['VNA']}, log:[{d:ago(1),who:'VNA',t:'Tạo hồ sơ hãng'}]}),
+];
+// Thêm email mẫu ngắn cho các hãng chưa có
+SAMPLE.forEach(v=>{ if(!v.emails.length && v.contact.email){ v.emails=[{id:uid(), subject:`Introduction – AIPT Vietnam × ${v.name}`, unread:false, msgs:[
+  mail('me',USERS[v.owners.KT[0]]?.name||'AIPT',v.created,`Dear ${v.contact.name||'Sir/Madam'},\nWe are AIPT, a solution provider in Vietnam. We would like to explore cooperation on your products for the ${v.project} segment.\nBest regards`),
+  ...(daysSince(v.created)>2?[mail(v.contact.email,v.contact.name,ago(Math.max(0,daysSince(v.created)-2)),'Thank you for your interest. Please find our catalog attached.',[{name:v.name.split(' ')[0]+'_Catalog.pdf',size:'4,2 MB'}])]:[])]}];}});
+
+const NCC = [
+  {name:'AeroVironment', group:'NSX', country:'Mỹ', mang:'A06', website:'www.avinc.com', coop:'Độc quyền', owners:{XNK:['CXN','NMH'],KD:[],KT:['NHT']}},
+  {name:'AIPT CAMERA LABEL', group:'NSX', country:'Việt Nam', mang:'An Ninh', website:'aiptgroup-cameralabel.com', coop:'Độc quyền', owners:{XNK:['CXN','NMH'],KD:[],KT:['LXTM']}},
+  {name:'AIPT DATA', group:'NSX', country:'Việt Nam', mang:'An Ninh', website:'aiptgroup-data.com', coop:'Độc quyền', owners:{XNK:['CXN','NMH'],KD:[],KT:['LXTM']}},
+  {name:'AIPT GPS', group:'NSX', country:'Việt Nam', mang:'Thiết bị an ninh', website:'aiptgroup.com', coop:'Độc quyền', owners:{XNK:['NMH'],KD:['KTD'],KT:['VNA']}},
+  {name:'AIPT LYNX', group:'NSX', country:'Việt Nam', mang:'A05', website:'lynx.aipt.vn', coop:'Độc quyền', owners:{XNK:['NMH'],KD:[],KT:['LXTM']}},
+];
+
+/* ======================= Trạng thái ======================= */
+const S = { view:'pipe', mode:'kanban', q:'', stage:'all', mine:false, openId:null, tab:'flow', openThread:null, fresh:null, synced:{} , draftHold:null};
+let vendors = SAMPLE;
+const byId = id => vendors.find(v=>v.id===id);
+const active = () => vendors.filter(v=>v.status==='active');
+const stageTasksDone = (v,sid) => (v.tasks[sid]||[]).filter(Boolean).length;
+const missingDocs = (v,sid) => STAGES[SIDX[sid]].docs.filter(c=>!v.files.some(f=>f.cat===c));
+const overallPct = v => { const all=STAGES.flatMap(s=>v.tasks[s.id]); return Math.round(all.filter(Boolean).length/all.length*100); };
+const isLate = v => v.status==='active' && v.deadline && new Date(v.deadline+'T12:00:00')<TODAY;
+const addLog = (v,t,who=ME) => v.log.push({d:iso(TODAY),who,t});
+
+function filtered(){
+  const q=S.q.trim().toLowerCase();
+  return vendors.filter(v=>{
+    if(q && !(`${v.name} ${v.country} ${v.mang} ${v.project} ${v.website}`.toLowerCase().includes(q))) return false;
+    if(S.mine && !Object.values(v.owners).flat().includes(ME)) return false;
+    return true;
+  });
+}
+
+/* ======================= Render: shell ======================= */
+function render(){
+  const app=document.getElementById('app');
+  const nActive=active().length;
+  app.innerHTML = `
+  <aside class="side">
+    <div class="brand">AIPT ERP<small>Phần mềm nội bộ</small></div>
+    <div class="nav-h">Nhà cung cấp</div>
+    <button class="nav ${S.view==='pipe'?'on':''}" data-a="view" data-v="pipe">${ic('board')} Phát triển hãng <span class="cnt">${nActive}</span></button>
+    <button class="nav ${S.view==='ncc'?'on':''}" data-a="view" data-v="ncc">${ic('list')} Quản lý thông tin NCC <span class="cnt">${NCC.length}</span></button>
+    <div class="nav-h">Khác</div>
+    <button class="nav" data-a="toast" data-t="Ngoài phạm vi prototype">${ic('file')} Dự án</button>
+    <button class="nav" data-a="toast" data-t="Ngoài phạm vi prototype">${ic('clock')} Activity Log</button>
+  </aside>
+  <div class="main">
+    <header class="top">
+      <h1>${S.view==='pipe'?'Phát triển hãng':'Quản lý thông tin NCC'}</h1>
+      <span class="proto">PROTOTYPE · dữ liệu mẫu</span>
+      <div class="who">${av(ME,true)}<span>${USERS[ME].name} · ${DEPTS[USERS[ME].dept]}</span></div>
+    </header>
+    <div class="content">
+      <div class="mobile-nav seg" style="align-self:flex-start">
+        <button class="${S.view==='pipe'?'on':''}" data-a="view" data-v="pipe">Phát triển hãng</button>
+        <button class="${S.view==='ncc'?'on':''}" data-a="view" data-v="ncc">Quản lý NCC</button>
+      </div>
+      ${S.view==='pipe'?renderPipe():renderNcc()}
+    </div>
+  </div>`;
+  renderLayer();
+}
+
+function renderPipe(){
+  const list=filtered();
+  const counts=STAGES.map(s=>list.filter(v=>v.status==='active'&&v.stage===s.id).length);
+  return `
+  <div class="toolbar">
+    <button class="btn pri" data-a="new">${ic('plus')} Thêm hãng tiềm năng</button>
+    <button class="btn pri" data-a="toast" data-t="Import từ Excel theo mẫu Form phát triển sản phẩm (mô phỏng)">${ic('import')} Import file</button>
+    <button class="btn pri" data-a="toast" data-t="Xuất danh sách ra Excel (mô phỏng)">${ic('down')} Xuất file</button>
+    <span class="sp"></span>
+    <input class="field search" id="q" placeholder="Tìm tên hãng, quốc gia, dự án…" value="${esc(S.q)}">
+    <label class="btn" style="gap:7px"><input type="checkbox" id="mine" ${S.mine?'checked':''} style="accent-color:var(--navy)"> Tôi phụ trách</label>
+    <div class="seg"><button class="${S.mode==='kanban'?'on':''}" data-a="mode" data-v="kanban">${ic('board')}</button><button class="${S.mode==='table'?'on':''}" data-a="mode" data-v="table">${ic('list')}</button></div>
+  </div>
+  <div class="flow">${STAGES.map((s,i)=>`
+    <button class="${S.stage===s.id?'on':''}" data-a="stagef" data-v="${s.id}">
+      <span class="step">Bước ${i+1} <span class="dept ${s.dept}">${s.dept}</span></span>
+      <span class="n num">${counts[i]}</span><span class="t">${s.name}</span>
+    </button>`).join('')}
+  </div>
+  ${S.mode==='kanban'?renderBoard(list):renderTable(list)}`;
+}
+
+function cardHtml(v){
+  const s=STAGES[SIDX[v.stage]]; const done=stageTasksDone(v,v.stage);
+  const owners=[...v.owners.KT,...v.owners.XNK,...v.owners.KD];
+  return `<button class="card ${isLate(v)?'late':''}" data-a="open" data-id="${v.id}">
+    <div style="display:flex;gap:6px;align-items:flex-start"><span class="nm">${esc(v.name)}</span>${v.priority==='Gấp'?'<span class="pill bad" style="margin-left:auto">Gấp</span>':''}</div>
+    <div class="meta"><span>${esc(v.country)}</span><span>${esc(v.mang)}</span><span>${esc(v.project||'')}</span></div>
+    ${v.status==='hold'?`<div class="note bad" style="padding:5px 8px;font-size:12px">${esc(v.hold.reason)} · tại ${STAGES[SIDX[v.hold.stage]].short}</div>`:
+    `<div style="display:flex;flex-direction:column;gap:4px"><div class="bar"><i style="width:${done/s.tasks.length*100}%"></i></div>
+      <div class="ft"><span class="num">${done}/${s.tasks.length} việc</span><span class="num" style="${isLate(v)?'color:var(--bad);font-weight:600':''}">${v.deadline?(isLate(v)?'Trễ '+daysSince(v.deadline)+' ngày':'Hạn '+fmtD(v.deadline).slice(0,5)):''}</span></div></div>`}
+    <div class="ft">${avs(owners)}<span class="r"><span title="Email">${ic('mail')}${v.emails.length}</span><span title="Tài liệu">${ic('file')}${v.files.length}</span><span title="Số ngày ở bước này" class="num">${daysSince(v.stageSince||v.created)}d</span></span></div>
+  </button>`;
+}
+function renderBoard(list){
+  const cols = STAGES.filter(s=>S.stage==='all'||S.stage===s.id).map(s=>{
+    const items=list.filter(v=>v.status==='active'&&v.stage===s.id);
+    return `<section class="col"><div class="col-h"><div class="r"><b>${s.name}</b><span class="dept ${s.dept}">${s.dept}</span><span class="c num">${items.length}</span></div><div class="s">${s.gate?'Có bước duyệt OK / Not OK':'&nbsp;'}</div></div>
+      <div class="cards">${items.map(cardHtml).join('')||'<div class="empty-col">Chưa có hãng ở bước này</div>'}</div></section>`;
+  });
+  const holds=list.filter(v=>v.status==='hold');
+  if(S.stage==='all') cols.push(`<section class="col hold"><div class="col-h"><div class="r"><b>Tạm dừng / Không đạt</b><span class="c num">${holds.length}</span></div><div class="s">Not OK quay lại P.KT tìm hãng khác</div></div><div class="cards">${holds.map(cardHtml).join('')||'<div class="empty-col">Trống</div>'}</div></section>`);
+  return `<div class="board-wrap"><div class="board" style="grid-template-columns:repeat(${cols.length},minmax(250px,1fr))">${cols.join('')}</div></div>
+  ${S.stage!=='all'?`<div><button class="btn ghost" data-a="stagef" data-v="all">${ic('back')} Xem tất cả các bước</button></div>`:''}`;
+}
+function renderTable(list){
+  const rows=list.filter(v=>v.status!=='done'&&(S.stage==='all'||v.stage===S.stage));
+  return `<div class="tbl-wrap"><table><thead><tr><th>STT</th><th>Tên hãng</th><th>Nhóm NCC</th><th>Quốc gia</th><th>Mảng SP</th><th>Dự án / nhu cầu</th><th>Giai đoạn</th><th>Tiến độ</th><th>Loại hình dự kiến</th><th class="c">XNK</th><th class="c">KD</th><th class="c">KT</th><th>Hạn</th></tr></thead><tbody>
+  ${rows.map((v,i)=>{const s=STAGES[SIDX[v.stage]];return `<tr class="click" data-a="open" data-id="${v.id}"><td class="num">${i+1}</td><td><b style="font-weight:600">${esc(v.name)}</b><div class="hint">${esc(v.website||'')}</div></td><td>${v.group}</td><td>${esc(v.country)}</td><td>${esc(v.mang)}</td><td>${esc(v.project||'')}</td>
+    <td>${v.status==='hold'?'<span class="pill bad">Tạm dừng</span>':`<span class="dept ${s.dept}">${s.dept}</span> ${s.name}`}</td>
+    <td style="min-width:110px"><div class="bar"><i style="width:${overallPct(v)}%"></i></div><span class="hint num">${overallPct(v)}%</span></td>
+    <td><span class="pill ${v.coopType==='Độc quyền'?'bad':''}">${v.coopType}</span></td>
+    <td class="c">${avs(v.owners.XNK)}</td><td class="c">${avs(v.owners.KD)}</td><td class="c">${avs(v.owners.KT)}</td>
+    <td class="num" style="${isLate(v)?'color:var(--bad);font-weight:600':''}">${fmtD(v.deadline)}</td></tr>`;}).join('')||'<tr><td colspan="13" class="c hint">Không có hãng phù hợp bộ lọc</td></tr>'}
+  </tbody></table></div>`;
+}
+function renderNcc(){
+  return `<div class="toolbar"><button class="btn pri" data-a="toast" data-t="Form tạo mới NCC hiện có">${ic('plus')} Tạo mới NCC</button><button class="btn pri" data-a="toast" data-t="Mô phỏng">${ic('import')} Import file NCC</button><button class="btn pri" data-a="toast" data-t="Mô phỏng">Xuất file NCC</button></div>
+  ${S.fresh?`<div class="note ok">Hồ sơ <b>${esc(S.fresh)}</b> vừa được chuyển từ Phát triển hãng, kèm toàn bộ tài liệu, lịch sử email và nhật ký.</div>`:''}
+  <div class="tbl-wrap"><table><thead><tr><th>STT</th><th>Tên NCC</th><th>Nhóm NCC</th><th>Quốc gia</th><th>Mảng sản phẩm</th><th>Website</th><th class="c">Loại hình hợp tác</th><th class="c">XNK</th><th class="c">KD</th><th class="c">KT</th><th>Nguồn</th></tr></thead><tbody>
+  ${NCC.map((n,i)=>`<tr class="${n.name===S.fresh?'fresh':''}"><td class="num">${i+1}</td><td>${esc(n.name)}</td><td>${n.group}</td><td>${esc(n.country)}</td><td>${esc(n.mang)}</td><td>${esc(n.website)}</td><td class="c"><span class="pill ${n.coop==='Độc quyền'?'bad':'navy'}">${n.coop}</span></td><td class="c">${avs(n.owners.XNK)}</td><td class="c">${avs(n.owners.KD)}</td><td class="c">${avs(n.owners.KT)}</td><td>${n.fromPipe?`<button class="btn sm" data-a="openArchived" data-id="${n.fromPipe}">Hồ sơ phát triển</button>`:'<span class="hint">Nhập trực tiếp</span>'}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+/* ======================= Render: drawer ======================= */
+function renderLayer(){
+  const L=document.getElementById('layer');
+  let h='';
+  if(S.openId){ const v=byId(S.openId); if(v) h+=renderDrawer(v); }
+  S.anim=false;
+  if(S.modal) h+=S.modal();
+  const prev=document.querySelector('.d-body'); const st=prev?prev.scrollTop:0;
+  L.innerHTML=h;
+  const nb=document.querySelector('.d-body'); if(nb) nb.scrollTop=st;
+  bindDrop();
+}
+function renderDrawer(v){
+  const cur=SIDX[v.stage]; const s=STAGES[cur]; const archived=v.status==='done';
+  const tabs=[['flow','Quy trình'],['info','Thông tin hãng'],['mail','Email',v.emails.length],['files','Tài liệu',v.files.length],['quote','Báo giá & giá dự án'],['eval','Đánh giá XNK / KD'],['log','Nhật ký',v.log.length]];
+  return `<div class="scrim" data-a="close"></div>
+  <aside class="drawer${S.anim?' enter':''}" role="dialog" aria-label="${esc(v.name)}">
+    <div class="d-head">
+      <div class="d-title">
+        <button class="btn ghost sm" data-a="close" aria-label="Đóng">${ic('x')}</button>
+        <div style="min-width:0;flex:1">
+          <h2>${esc(v.name)}</h2>
+          <div class="sub"><span>${esc(v.country)}</span><span>${esc(v.mang)}</span><span>${esc(domainOf(v.website))}</span><span>Đầu mối: ${esc(v.contact.name||'chưa có')}</span><span>Tạo ${fmtD(v.created)}</span></div>
+        </div>
+        <div class="acts">
+          ${archived?'<span class="pill ok">Đã chuyển sang Quản lý NCC</span>':v.status==='hold'?`<button class="btn" data-a="reopen">${ic('undo')} Mở lại hồ sơ</button>`:`<button class="btn danger" data-a="holdForm">${ic('pause')} Tạm dừng</button>`}
+        </div>
+      </div>
+      <div class="stepper">${STAGES.map((x,i)=>{const c = archived||i<cur?'done':i===cur?(v.status==='hold'?'fail':'cur'):''; return `<button class="stp ${c}" data-a="tab" data-v="flow" title="${x.name}"><i></i><span>${i+1}. ${x.short}</span></button>`;}).join('')}</div>
+      <nav class="tabs">${tabs.map(t=>`<button class="tab ${S.tab===t[0]?'on':''}" data-a="tab" data-v="${t[0]}">${t[1]}${t[2]!=null?` <span class="b num">${t[2]}</span>`:''}</button>`).join('')}</nav>
+    </div>
+    <div class="d-body">${({flow:tabFlow,info:tabInfo,mail:tabMail,files:tabFiles,quote:tabQuote,eval:tabEval,log:tabLog})[S.tab](v)}</div>
+  </aside>`;
+}
+
+function advanceBlockers(v){
+  const s=STAGES[SIDX[v.stage]]; const b=[];
+  const left=s.tasks.length-stageTasksDone(v,v.stage); if(left) b.push(`Còn ${left} việc chưa hoàn thành`);
+  const md=missingDocs(v,v.stage); if(md.length) b.push('Thiếu tài liệu: '+md.join(', '));
+  if(s.gate && v.gates[s.id]?.result!=='OK') b.push(`Cần ${DEPTS[s.dept]} duyệt OK`);
+  if(s.id==='s6'){ if(v.coopType==='Chưa xác định') b.push('Chưa chọn loại hình hợp tác'); if(!v.signDate) b.push('Chưa nhập ngày ký hợp tác'); }
+  return b;
+}
+function tabFlow(v){
+  const cur=SIDX[v.stage]; const s=STAGES[cur];
+  if(v.status==='done') return `<div class="note ok">Hồ sơ đã hoàn tất quy trình và chuyển sang Quản lý thông tin NCC ngày ${fmtD(v.doneDate)}. Ở đây chỉ xem lại.</div>${allStagesSummary(v)}`;
+  const g=v.gates[s.id]; const blockers=advanceBlockers(v); const last=cur===STAGES.length-1;
+  return `
+  ${v.status==='hold'?`<div class="note bad"><b>Tạm dừng tại bước ${cur+1} · ${esc(v.hold.reason)}</b><br>${esc(v.hold.comment||'')} <span style="opacity:.8">(${USERS[v.hold.by]?.name}, ${fmtD(v.hold.date)})</span></div>`:''}
+  <div class="grid2">
+    <section class="panel">
+      <div class="panel-h"><span class="dept ${s.dept}">${s.dept}</span><h3>Bước ${cur+1}: ${s.name}</h3><div class="r hint">${daysSince(v.stageSince||v.created)} ngày ở bước này</div></div>
+      <div class="panel-b">
+        <div class="hint">${s.desc}</div>
+        <div class="chk">${s.tasks.map((t,j)=>{const on=v.tasks[s.id][j];return `<label><input type="checkbox" data-a="task" data-s="${s.id}" data-j="${j}" ${on?'checked':''} ${v.status!=='active'?'disabled':''}><span class="${on?'done-t':''}">${t}</span><span class="who">${(v.owners[s.dept]||[]).map(k=>k).join(', ')}</span></label>`;}).join('')}</div>
+        ${s.docs.length?`<div><div class="hint" style="margin-bottom:6px">Tài liệu cần có ở bước này</div><div class="req">${s.docs.map(d=>{const has=v.files.some(f=>f.cat===d);return `<span class="pill ${has?'ok':'warn'}">${has?ic('check'):''}${d}</span>`;}).join('')} <button class="btn sm ghost" data-a="tab" data-v="files">Mở Tài liệu ${ic('arrow')}</button></div></div>`:''}
+        ${s.gate?gateBox(v,s,g):''}
+        ${v.status==='active'?`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px">
+          ${last?`<button class="btn ok" data-a="transfer" ${blockers.length?'disabled':''}>${ic('arrow')} Hoàn tất &amp; chuyển sang Quản lý NCC</button>`:`<button class="btn pri" data-a="advance" ${blockers.length?'disabled':''}>Chuyển bước ${cur+2}: ${STAGES[cur+1].name} ${ic('arrow')}</button>`}
+          ${cur>0?`<button class="btn ghost" data-a="back">${ic('back')} Trả về bước trước</button>`:''}
+        </div>${blockers.length?`<div class="note warn">${blockers.map(esc).join(' · ')}</div>`:''}`:''}
+      </div>
+    </section>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <section class="panel"><div class="panel-h"><h3>Người phụ trách</h3></div><div class="panel-b">
+        ${['KT','XNK','KD'].map(d=>`<div style="display:flex;align-items:center;gap:10px"><span class="dept ${d}" style="width:38px;justify-content:center">${d}</span>${v.owners[d].length?v.owners[d].map(k=>`<span style="display:inline-flex;gap:6px;align-items:center">${av(k,true)}<span style="font-size:12.5px">${USERS[k].name}</span></span>`).join(''):'<span class="hint">Chưa phân công</span>'}</div>`).join('')}
+      </div></section>
+      <section class="panel"><div class="panel-h"><h3>Tóm tắt</h3></div><div class="panel-b" style="gap:8px">
+        ${kvRow('Dự án / nhu cầu',esc(v.project||'—'))}${kvRow('Mức ưu tiên',v.priority==='Gấp'?'<span class="pill bad">Gấp</span>':'Thường')}${kvRow('Hạn hoàn thành',`<span class="num" style="${isLate(v)?'color:var(--bad);font-weight:600':''}">${fmtD(v.deadline)}</span>`)}
+        ${kvRow('Loại hình dự kiến',v.coopType)}${kvRow('Email gần nhất',lastMail(v))}${kvRow('Tiến độ chung',`<span class="num">${overallPct(v)}%</span>`)}
+      </div></section>
+    </div>
+  </div>
+  ${allStagesSummary(v)}`;
+}
+const kvRow=(k,val)=>`<div style="display:flex;gap:12px;justify-content:space-between;align-items:baseline;font-size:13px"><span class="hint">${k}</span><span style="text-align:right">${val}</span></div>`;
+function lastMail(v){ const all=v.emails.flatMap(t=>t.msgs); if(!all.length) return '—'; const m=all.sort((a,b)=>a.date<b.date?1:-1)[0]; return `${fmtD(m.date)} · ${m.from==='me'?'gửi đi':'từ hãng'}`; }
+function gateBox(v,s,g){
+  const canDecide = v.status==='active' && stageTasksDone(v,s.id)===s.tasks.length;
+  return `<div class="gate"><div style="display:flex;gap:8px;align-items:center"><b>Kết luận ${DEPTS[s.dept]}</b>
+    ${g?`<span class="pill ${g.result==='OK'?'ok':'bad'}" style="margin-left:auto">${g.result==='OK'?'OK':'Not OK'} · ${USERS[g.by]?.name}, ${fmtD(g.date)}</span>`:'<span class="pill" style="margin-left:auto">Chưa kết luận</span>'}</div>
+    ${g?`<div class="hint">${esc(g.comment)}</div>`:''}
+    ${v.status==='active'&&!g?`<textarea class="field" id="gateNote" placeholder="${s.id==='s4'?'Nhận xét: khả thi NK, HS code, CO/CQ, giá dự án…':'Nhận xét: nhu cầu thị trường, giá so với đối thủ…'}"></textarea>
+      <div class="r"><button class="btn ok" data-a="gate" data-r="OK" ${canDecide?'':'disabled'}>${ic('check')} OK, chuyển tiếp được</button><button class="btn danger" data-a="gate" data-r="NotOK" ${canDecide?'':'disabled'}>Not OK</button></div>
+      ${canDecide?'':'<div class="hint">Hoàn thành các việc ở trên trước khi kết luận.</div>'}`:''}
+    ${v.status==='active'&&g?`<div><button class="btn sm ghost" data-a="gateReset">Sửa kết luận</button></div>`:''}
+  </div>`;
+}
+function allStagesSummary(v){
+  return `<section class="panel"><div class="panel-h"><h3>Toàn bộ quy trình</h3><span class="hint">Theo QT phát triển sản phẩm / dự án</span></div><div class="tbl-wrap" style="border:0;border-radius:0 0 8px 8px"><table style="min-width:640px"><thead><tr><th>Bước</th><th>Phòng</th><th>Việc</th><th>Tài liệu</th><th>Kết luận</th></tr></thead><tbody>
+  ${STAGES.map((s,i)=>{const d=stageTasksDone(v,s.id),g=v.gates[s.id],md=missingDocs(v,s.id);return `<tr><td>${i+1}. ${s.name}</td><td><span class="dept ${s.dept}">${s.dept}</span></td><td class="num">${d}/${s.tasks.length}</td><td>${s.docs.length?(md.length?`<span class="pill warn">thiếu ${md.length}</span>`:'<span class="pill ok">đủ</span>'):'<span class="hint">—</span>'}</td><td>${s.gate?(g?`<span class="pill ${g.result==='OK'?'ok':'bad'}">${g.result==='OK'?'OK':'Not OK'}</span>`:'<span class="hint">chờ</span>'):'<span class="hint">—</span>'}</td></tr>`;}).join('')}
+  </tbody></table></div></section>`;
+}
+
+function opt(list,val){ return list.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join(''); }
+function formFields(v, isNew){
+  const ro = v.status==='done';
+  const dis = ro?'disabled':'';
+  return `<div class="form">
+    <div class="sec-t">Thông tin như form Tạo mới NCC</div>
+    <div class="fl"><label><span class="star">*</span>Website</label><input class="field" id="f_website" value="${esc(v.website)}" placeholder="Nhập website" ${dis}></div>
+    <div class="fl"><label><span class="star">*</span>Nhóm NCC</label><select class="field" id="f_group" ${dis}>${opt(GROUPS,v.group)}</select></div>
+    <div class="fl"><label><span class="star">*</span>Tên NCC</label><input class="field" id="f_name" value="${esc(v.name)}" placeholder="Nhập tên NCC" ${dis}></div>
+    <div class="fl"><label><span class="star">*</span>Mảng sản phẩm</label><select class="field" id="f_mang" ${dis}>${opt(MANGS,v.mang)}</select></div>
+    <div class="fl"><label>Quốc gia</label><select class="field" id="f_country" ${dis}>${opt(COUNTRIES,v.country)}</select></div>
+    <div class="fl"><label>Loại hình hợp tác ${isNew?'':'<span class="hint" style="font-weight:400">(chốt ở bước 6)</span>'}</label><select class="field" id="f_coop" ${isNew||ro?'disabled':''}>${opt(COOPS,v.coopType)}</select></div>
+    <div class="fl"><label>Đầu mối liên hệ</label><input class="field" id="f_cname" value="${esc(v.contact.name)}" placeholder="Nhập đầu mối liên hệ" ${dis}></div>
+    <div class="fl"><label>Lịch cập nhật kết quả hợp tác</label><select class="field" id="f_sched" ${dis}>${opt(SCHED,v.schedule)}</select></div>
+    <div class="fl"><label>Ngày ký hợp tác</label><input type="date" class="field" id="f_sign" value="${v.signDate}" ${isNew||ro?'disabled':''}></div>
+    <div class="fl"><label>Ngày hết hạn hợp tác</label><input type="date" class="field" id="f_exp" value="${v.expireDate}" ${isNew||ro?'disabled':''}></div>
+    <div class="fl full"><label>Ghi chú</label><textarea class="field" id="f_note" placeholder="Nhập ghi chú (nếu có)" ${dis}>${esc(v.note)}</textarea></div>
+    <div class="fl full"><label>Mô tả hãng</label><textarea class="field" id="f_desc" placeholder="Mô tả hãng" ${dis}>${esc(v.desc)}</textarea></div>
+    <div class="sec-t">Bổ sung cho giai đoạn phát triển</div>
+    <div class="fl"><label>Dự án / nhu cầu phát sinh</label><input class="field" id="f_project" value="${esc(v.project||'')}" placeholder="VD: Camera nhiệt giám sát biên giới" ${dis}></div>
+    <div class="fl"><label>Mức ưu tiên · Hạn hoàn thành</label><div style="display:flex;gap:8px"><select class="field" id="f_prio" style="width:110px" ${dis}>${opt(['Thường','Gấp'],v.priority)}</select><input type="date" class="field" id="f_deadline" value="${v.deadline||''}" style="flex:1" ${dis}></div></div>
+    <div class="fl"><label>Chức danh đầu mối</label><input class="field" id="f_ctitle" value="${esc(v.contact.title)}" placeholder="VD: Export Sales Manager" ${dis}></div>
+    <div class="fl"><label>Email đầu mối <span class="hint" style="font-weight:400">(dùng để khớp Gmail)</span></label><input class="field" id="f_cemail" value="${esc(v.contact.email)}" placeholder="name@hang.com" ${dis}></div>
+    <div class="fl"><label>Điện thoại</label><input class="field" id="f_cphone" value="${esc(v.contact.phone)}" ${dis}></div>
+    <div class="fl"><label>Người phụ trách</label><div style="display:flex;flex-direction:column;gap:6px">${['KT','XNK','KD'].map(d=>`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="dept ${d}" style="width:38px;justify-content:center">${d}</span>${Object.entries(USERS).filter(([,u])=>u.dept===d).map(([k,u])=>`<label style="display:inline-flex;gap:4px;align-items:center;font-size:12.5px;font-weight:400"><input type="checkbox" class="f_owner" data-d="${d}" value="${k}" ${v.owners[d].includes(k)?'checked':''} ${dis} style="accent-color:var(--navy)">${u.name.split(' ').slice(-2).join(' ')}</label>`).join('')}</div>`).join('')}</div></div>
+  </div>`;
+}
+function tabInfo(v){
+  return `<section class="panel"><div class="panel-h"><h3>Thông tin hãng</h3><div class="r">${v.status==='done'?'':`<button class="btn pri" data-a="saveInfo">${ic('save')} Lưu thay đổi</button>`}</div></div><div class="panel-b">${formFields(v,false)}</div></section>`;
+}
+
+/* --- Email --- */
+function tabMail(v){
+  const dom=domainOf(v.website); const sy=S.synced[v.id];
+  const threads=[...v.emails].sort((a,b)=>lastDate(b)>lastDate(a)?1:-1);
+  return `<div class="mail-bar"><span class="gdot"></span><b>Gmail · Google Workspace</b>
+    <span class="hint">Tự gom email có địa chỉ <b>@${esc(dom||'—')}</b>${v.contact.email?` hoặc <b>${esc(v.contact.email)}</b>`:''}, và email gắn nhãn <span class="lbl">${esc(v.label)}</span> trong hộp thư của người phụ trách.</span>
+    <span style="margin-left:auto;display:flex;gap:8px;align-items:center"><span class="hint">${sy?'Đồng bộ lúc '+sy:'Đồng bộ tự động 15 phút/lần'}</span>
+    <button class="btn sm" data-a="sync" ${v.status==='done'?'disabled':''}>${ic('sync')} Đồng bộ</button><button class="btn sm pri" data-a="compose" ${v.status==='done'?'disabled':''}>${ic('send')} Soạn email</button></span></div>
+  <section class="panel">
+    <div class="panel-h"><h3>Lịch sử trao đổi</h3><span class="hint num">${threads.length} chuỗi · ${threads.reduce((a,t)=>a+t.msgs.length,0)} email</span></div>
+    ${threads.length?threads.map(t=>threadHtml(v,t)).join(''):'<div class="panel-b hint">Chưa có email. Nhập email đầu mối hoặc website ở tab Thông tin hãng để hệ thống tự khớp.</div>'}
+  </section>`;
+}
+const lastDate = t => t.msgs[t.msgs.length-1].date;
+function threadHtml(v,t){
+  const last=t.msgs[t.msgs.length-1]; const open=S.openThread===t.id;
+  const names=[...new Set(t.msgs.map(m=>m.from==='me'?'Tôi':m.fromName.split(' ')[0]))].join(', ');
+  return `<div class="thread"><button class="th-row" data-a="thread" data-id="${t.id}">
+    <span class="fr" style="${t.unread?'':'font-weight:500'}">${esc(names)} <span class="hint num">(${t.msgs.length})</span></span>
+    <span class="sj"><span class="lbl">${esc(v.label)}</span><span style="${t.unread?'font-weight:600':''}">${esc(t.subject)}</span> <em>– ${esc(last.body.replace(/\n/g,' ').slice(0,90))}</em></span>
+    <span class="dt num">${t.msgs.some(m=>m.attachments.length)?'📎 ':''}${fmtD(last.date)}</span></button>
+    ${open?`<div class="msgs">${t.msgs.map(m=>`<div class="msg"><div class="h"><b>${esc(m.fromName)}</b><span class="ad">${m.from==='me'?'gửi từ AIPT':esc(m.from)}</span><span class="dt num">${fmtD(m.date)}</span></div><p>${esc(m.body)}</p>
+      ${m.attachments.map(a=>{const saved=v.files.some(f=>f.name===a.name);return `<span class="att"><span class="fic" style="width:22px;height:26px;font-size:7px;background:${fileColor(a.name)}">${fileExt(a.name)}</span>${esc(a.name)} <span class="hint">${a.size}</span>${saved?'<span class="pill ok">Đã lưu</span>':`<button class="btn sm" data-a="saveAtt" data-t="${t.id}" data-n="${esc(a.name)}" data-sz="${esc(a.size)}">Lưu vào Tài liệu</button>`}</span>`;}).join('')}</div>`).join('')}
+      <div><a class="btn sm" href="https://mail.google.com/" target="_blank" rel="noopener">Mở trong Gmail ${ic('arrow')}</a></div></div>`:''}</div>`;
+}
+
+/* --- Files --- */
+function tabFiles(v){
+  const groups=FILECATS.map(c=>[c,v.files.filter(f=>f.cat===c)]).filter(([,a])=>a.length);
+  const needed=[...new Set(STAGES.flatMap(s=>s.docs))];
+  return `<section class="panel"><div class="panel-h"><h3>Hồ sơ tài liệu</h3><span class="hint">Lưu trên Google Drive, thư mục <b>NCC-Phát triển/${esc(v.name)}</b></span></div>
+  <div class="panel-b">
+    ${v.status==='done'?'':`<div class="drop" id="drop"><div style="flex:1;min-width:200px"><b>Kéo thả file vào đây</b><div class="hint">Catalog, datasheet, HDSD, báo giá, NDA, hợp đồng… hoặc lưu thẳng từ tệp đính kèm trong tab Email.</div></div>
+      <select class="field" id="upCat">${opt(FILECATS,'Catalog')}</select>
+      <label class="btn pri">${ic('up')} Chọn file<input type="file" id="upFile" multiple hidden></label></div>`}
+    <div><div class="hint" style="margin-bottom:6px">Tài liệu bắt buộc theo quy trình</div><div class="req">${needed.map(d=>{const has=v.files.some(f=>f.cat===d);return `<span class="pill ${has?'ok':''}">${has?ic('check'):''}${d}</span>`;}).join('')}</div></div>
+    ${groups.length?groups.map(([c,arr])=>`<div><div class="fgrp">${c} · ${arr.length}</div>${arr.map(f=>`<div class="frow"><span class="fic" style="background:${fileColor(f.name)}">${fileExt(f.name)}</span><div style="min-width:0"><div class="nm">${esc(f.name)}</div><div class="mt num">${f.size} · ${fmtD(f.date)} · ${USERS[f.by]?.name||''} · nguồn: ${f.src}</div></div>
+      <div class="r">${f.url?`<a class="btn sm" href="${f.url}" target="_blank" rel="noopener">Xem</a>`:`<button class="btn sm" data-a="toast" data-t="Mở file trên Google Drive (mô phỏng)">Xem</button>`}${v.status==='done'?'':`<button class="btn sm ghost" data-a="delFile" data-id="${f.id}" aria-label="Xóa">${ic('trash')}</button>`}</div></div>`).join('')}</div>`).join(''):'<div class="hint">Chưa có tài liệu.</div>'}
+  </div></section>`;
+}
+
+/* --- Quote & landed cost --- */
+function calcQuote(q){
+  const ex = q.lines.reduce((a,l)=>a+(+l.qty||0)*(+l.price||0),0);
+  const cif = ex + (+q.freight||0) + (+q.insurance||0);
+  const cifV = cif*(+q.fx||0);
+  const duty = cifV*(+q.duty||0)/100;
+  const vat = (cifV+duty)*(+q.vat||0)/100;
+  const cost = cifV + duty + (+q.other||0);
+  const ratio = ex? cost/(ex) : 0; // VND giá vốn trên 1 đơn vị ngoại tệ giá hãng
+  const sell = cost*(1+(+q.margin||0)/100);
+  return {ex,cif,cifV,duty,vat,cost,ratio,sell};
+}
+function tabQuote(v){
+  const q=v.quote, c=calcQuote(q), ro=v.status==='done'?'disabled':'';
+  const m=v.market; const comps=m.comps.filter(x=>x.price>0);
+  const minComp = comps.length?Math.min(...comps.map(x=>x.price)):0;
+  return `<section class="panel"><div class="panel-h"><h3>Báo giá của hãng</h3><span class="dept KT">KT nhập</span><div class="r">
+    <select class="field" id="q_cur" data-q="currency" ${ro}>${opt(['USD','EUR','GBP','JPY','KRW','SGD'],q.currency)}</select>
+    <select class="field" id="q_inc" data-q="incoterm" ${ro}>${opt(['EXW','FCA','FOB','CIF','DAP'],q.incoterm)}</select></div></div>
+    <div class="tbl-wrap" style="border:0;border-radius:0"><table class="ql"><thead><tr><th style="width:22%">Model</th><th>Mô tả</th><th style="width:70px">SL</th><th style="width:130px">Đơn giá (${q.currency})</th><th style="width:130px" class="c">Giá vốn / đv (₫)</th><th style="width:130px" class="c">Giá dự án / đv (₫)</th><th style="width:40px"></th></tr></thead><tbody>
+    ${q.lines.map((l,i)=>`<tr><td><input data-l="${i}" data-k="model" value="${esc(l.model)}" ${ro}></td><td><input data-l="${i}" data-k="desc" value="${esc(l.desc)}" ${ro}></td><td><input class="r num" data-l="${i}" data-k="qty" type="number" min="0" value="${l.qty}" ${ro}></td><td><input class="r num" data-l="${i}" data-k="price" type="number" min="0" value="${l.price}" ${ro}></td>
+      <td class="num" style="text-align:right">${vnd((+l.price||0)*c.ratio)}</td><td class="num" style="text-align:right;font-weight:600">${vnd((+l.price||0)*c.ratio*(1+(+q.margin||0)/100))}</td><td>${ro?'':`<button class="btn sm ghost" data-a="delLine" data-i="${i}" aria-label="Xóa dòng">${ic('x')}</button>`}</td></tr>`).join('')||'<tr><td colspan="7" class="hint">Chưa có dòng báo giá</td></tr>'}
+    </tbody></table></div>
+    <div class="panel-b" style="padding-top:8px">${ro?'':`<div><button class="btn sm" data-a="addLine">${ic('plus')} Thêm dòng</button></div>`}</div></section>
+
+  <section class="panel"><div class="panel-h"><h3>Tính giá dự án</h3><span class="dept XNK">XNK nhập</span><span class="hint">Giá vốn = CIF quy đổi + thuế NK + phí khác. VAT NK được khấu trừ nên tách riêng.</span></div>
+    <div class="panel-b">
+      <div class="inl">
+        ${numIn('Tỷ giá (₫ / '+q.currency+')','fx',q.fx,ro)}${numIn('Cước vận chuyển ('+q.currency+')','freight',q.freight,ro)}${numIn('Bảo hiểm ('+q.currency+')','insurance',q.insurance,ro)}${numIn('Phí khác: thông quan, kiểm định, nội địa (₫)','other',q.other,ro)}
+        ${numIn('Thuế NK (%)','duty',q.duty,ro)}${numIn('VAT NK (%)','vat',q.vat,ro)}${numIn('Biên lợi nhuận đề xuất (%)','margin',q.margin,ro)}
+      </div>
+      <div class="calc">
+        <div class="kv"><span>Tổng giá hãng (${q.incoterm})</span><b class="num">${money(c.ex,q.currency)}</b></div>
+        <div class="kv"><span>CIF quy đổi</span><b class="num">${vnd(c.cifV)} ₫</b></div>
+        <div class="kv"><span>Thuế NK · VAT NK (khấu trừ)</span><b class="num">${vnd(c.duty)} · ${vnd(c.vat)}</b></div>
+        <div class="kv"><span>Giá vốn về kho</span><b class="num">${vnd(c.cost)} ₫</b></div>
+        <div class="kv hl" style="grid-column:span 2"><span>Giá dự án đề xuất (chưa VAT bán ra)</span><b class="num" style="font-size:20px">${vnd(c.sell)} ₫</b></div>
+        <div class="kv" style="grid-column:span 2"><span>So với giá đối thủ thấp nhất (PKD nhập ở tab Đánh giá)</span><b class="num">${minComp?compareTxt(c.sell,minComp):'<span class="hint" style="font-size:13px;font-weight:400">Chưa có giá đối thủ</span>'}</b></div>
+      </div>
+    </div></section>`;
+}
+const numIn=(lab,k,val,ro)=>`<div class="fl"><label style="font-weight:500;font-size:12.5px">${lab}</label><input class="field num" type="number" data-q="${k}" value="${val}" ${ro}></div>`;
+function compareTxt(sell,ref){ const d=(sell-ref)/ref*100; const cls=d<=0?'ok':d<=8?'warn':'bad'; return `<span class="pill ${cls}" style="font-size:13px">${d<=0?'Thấp hơn':'Cao hơn'} ${Math.abs(d).toFixed(1)}%</span> <span class="hint" style="font-size:12.5px;font-weight:400">${vnd(ref)} ₫</span>`; }
+
+/* --- Evaluation --- */
+function tabEval(v){
+  const x=v.xnk, m=v.market, ro=v.status==='done'?'disabled':''; const c=calcQuote(v.quote);
+  return `<div class="grid2" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+  <section class="panel"><div class="panel-h"><span class="dept XNK">XNK</span><h3>Đánh giá khả thi nhập khẩu</h3><div class="r">${gatePill(v,'s4')}</div></div><div class="panel-b">
+    <div class="fl"><label>Mã HS</label><input class="field" data-x="hs" value="${esc(x.hs)}" placeholder="VD: 8525.89.10" ${ro}></div>
+    <div class="fl"><label>Giấy phép / kiểm tra chuyên ngành</label><input class="field" data-x="license" value="${esc(x.license)}" ${ro}></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fl"><label>CO</label><select class="field" data-x="co" ${ro}>${opt(['Chưa xác nhận','Có','Có (Form UK)','Có (EUR.1)','Không cấp được'],x.co)}</select></div>
+      <div class="fl"><label>CQ</label><select class="field" data-x="cq" ${ro}>${opt(['Chưa xác nhận','Có','Không cấp được'],x.cq)}</select></div></div>
+    <div class="fl"><label>Lưu ý đặc biệt (mã hóa, lưỡng dụng, ITAR…)</label><textarea class="field" data-x="special" ${ro}>${esc(x.special)}</textarea></div>
+    <div class="note">Giá dự án đang tính: <b class="num">${vnd(c.sell)} ₫</b> · <button class="btn sm ghost" data-a="tab" data-v="quote">Xem bảng tính ${ic('arrow')}</button></div>
+  </div></section>
+  <section class="panel"><div class="panel-h"><span class="dept KD">KD</span><h3>Đánh giá thị trường</h3><div class="r">${gatePill(v,'s5')}</div></div><div class="panel-b">
+    <div class="fl"><label>Mức độ cần thiết với thị trường</label><div class="seg" style="align-self:flex-start">${[1,2,3,4,5].map(n=>`<button class="${m.need===n?'on':''}" data-a="need" data-v="${n}" ${ro}>${n}</button>`).join('')}</div><span class="hint">1 = không có nhu cầu · 5 = khách hàng đang hỏi</span></div>
+    <div class="fl"><label>Giá mục tiêu khách hàng chấp nhận (₫)</label><input class="field num" type="number" data-m="target" value="${m.target||''}" ${ro}></div>
+    <div class="fl"><label>Giá đối thủ tham chiếu</label>
+      ${m.comps.map((cp,i)=>`<div style="display:flex;gap:6px"><input class="field" style="flex:1.4" data-c="${i}" data-k="name" value="${esc(cp.name)}" placeholder="Hãng / model đối thủ" ${ro}><input class="field num" style="flex:1" type="number" data-c="${i}" data-k="price" value="${cp.price||''}" placeholder="Giá (₫)" ${ro}></div>`).join('')}
+      ${ro?'':`<div><button class="btn sm" data-a="addComp">${ic('plus')} Thêm đối thủ</button></div>`}</div>
+    ${m.target?`<div class="note">Giá dự án so với giá mục tiêu: ${compareTxt(c.sell,m.target)}</div>`:''}
+    <div class="hint">Bảng so sánh chi tiết theo FORM SO SÁNH ĐỐI THỦ đính kèm ở tab Tài liệu, mục “So sánh đối thủ”.</div>
+  </div></section></div>`;
+}
+function gatePill(v,sid){ const g=v.gates[sid]; return g?`<span class="pill ${g.result==='OK'?'ok':'bad'}">${g.result==='OK'?'OK':'Not OK'}</span>`:'<span class="pill">Chưa kết luận</span>'; }
+
+function tabLog(v){
+  return `<section class="panel"><div class="panel-h"><h3>Nhật ký hoạt động</h3></div><div class="panel-b"><div class="tl">
+  ${[...v.log].reverse().map(l=>`<div class="tl-i"><span class="d num">${fmtD(l.d)}</span><span class="dot ${USERS[l.who]?.dept||''}"></span><span><b style="font-weight:600">${USERS[l.who]?.name||l.who}</b> · ${esc(l.t)}</span></div>`).join('')}
+  </div></div></section>`;
+}
+
+/* ======================= Modals ======================= */
+function blankVendor(){ return V({name:'', website:'', country:'Mỹ', mang:'A06', stage:'s1', partial:0, stageSince:iso(TODAY), created:iso(TODAY), deadline:ahead(30), project:'', contact:{name:'',title:'',email:'',phone:''}, owners:{XNK:[],KD:[],KT:[ME]}, log:[]}); }
+function modalNew(){
+  const v=S.draft;
+  return `<div class="modal"><div class="mbox"><div class="m-h">Thêm hãng tiềm năng</div><div class="m-b">
+    <div class="note">Hồ sơ bắt đầu ở <b>Bước 1 · Tìm kiếm &amp; tiếp cận</b>. Loại hình hợp tác và ngày ký được chốt ở bước 6, khi chuyển sang Quản lý NCC.</div>
+    <div id="newErr"></div>${formFields(v,true)}</div>
+    <div class="m-f"><button class="btn" data-a="closeModal">Thoát</button><button class="btn pri" data-a="createVendor">Lưu</button></div></div></div>`;
+}
+function modalHold(){
+  return `<div class="modal"><div class="mbox sm"><div class="m-h">Tạm dừng hồ sơ</div><div class="m-b">
+    <div class="fl"><label>Lý do</label><select class="field" id="h_reason">${opt(HOLD_REASONS,HOLD_REASONS[0])}</select></div>
+    <div class="fl"><label>Ghi chú</label><textarea class="field" id="h_note" placeholder="Chi tiết để P.KT tìm phương án / hãng thay thế"></textarea></div>
+  </div><div class="m-f"><button class="btn" data-a="closeModal">Thoát</button><button class="btn danger" data-a="doHold">Tạm dừng</button></div></div></div>`;
+}
+function modalTransfer(){
+  const v=byId(S.openId);
+  return `<div class="modal"><div class="mbox sm"><div class="m-h">Chuyển sang Quản lý NCC</div><div class="m-b">
+    <div>Hồ sơ <b>${esc(v.name)}</b> đã ký <b>${v.coopType}</b> ngày ${fmtD(v.signDate)}. Khi chuyển:</div>
+    <div class="chk" style="font-size:13px">
+      <label style="cursor:default">${ic('check')} Tạo bản ghi NCC với các trường của form Tạo mới NCC</label>
+      <label style="cursor:default">${ic('check')} Mang theo ${v.files.length} tài liệu, ${v.emails.length} chuỗi email, ${v.log.length} dòng nhật ký</label>
+      <label style="cursor:default">${ic('check')} Giữ người phụ trách XNK / KD / KT</label>
+      <label style="cursor:default">${ic('check')} Hồ sơ phát triển được lưu trữ, chỉ xem</label>
+    </div></div><div class="m-f"><button class="btn" data-a="closeModal">Thoát</button><button class="btn ok" data-a="doTransfer">Xác nhận chuyển</button></div></div></div>`;
+}
+const TEMPLATES = {
+  'Giới thiệu công ty':v=>[`Introduction – AIPT Vietnam × ${v.name}`,`Dear ${v.contact.name||'Sir/Madam'},\n\nWe are AIPT, a solution provider for security agencies in Vietnam. We are looking for partners in the ${v.mang} segment and would like to learn more about your products.\n\nBest regards,\n${USERS[ME].name}`],
+  'Xin catalog / datasheet':v=>[`Request for catalog and datasheet – ${v.name}`,`Dear ${v.contact.name||'Sir/Madam'},\n\nCould you please share your latest product catalog, datasheets and user manuals (English)?\n\nBest regards,\n${USERS[ME].name}`],
+  'Xin báo giá':v=>[`Request for quotation – ${v.project||v.name}`,`Dear ${v.contact.name||'Sir/Madam'},\n\nPlease quote the following configuration, ${v.quote.incoterm} price, incl. lead time and warranty. Please confirm that CO and CQ can be provided.\n\nBest regards,\n${USERS[ME].name}`],
+  'Gửi NDA':v=>[`NDA – AIPT Vietnam and ${v.name}`,`Dear ${v.contact.name||'Sir/Madam'},\n\nPlease find attached our mutual NDA for review and signature.\n\nBest regards,\n${USERS[ME].name}`],
+};
+function modalCompose(){
+  const v=byId(S.openId); const c=S.compose;
+  return `<div class="modal"><div class="mbox"><div class="m-h">Soạn email qua Gmail</div><div class="m-b">
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="hint" style="align-self:center">Mẫu:</span>${Object.keys(TEMPLATES).map(k=>`<button class="btn sm ${c.tpl===k?'pri':''}" data-a="tpl" data-v="${k}">${k}</button>`).join('')}</div>
+    <div class="fl"><label>Đến</label><input class="field" id="c_to" value="${esc(c.to)}"></div>
+    <div class="fl"><label>CC</label><input class="field" id="c_cc" value="${esc(c.cc)}"></div>
+    <div class="fl"><label>Tiêu đề</label><input class="field" id="c_sub" value="${esc(c.sub)}"></div>
+    <div class="fl"><label>Nội dung</label><textarea class="field" id="c_body" style="min-height:200px">${esc(c.body)}</textarea></div>
+    <div class="hint">Email gửi từ tài khoản Google Workspace của bạn, tự gắn nhãn <span class="lbl">${esc(v.label)}</span> và lưu vào lịch sử hãng. Bản prototype chỉ mô phỏng, không gửi thật.</div>
+  </div><div class="m-f"><button class="btn" data-a="closeModal">Thoát</button><button class="btn pri" data-a="sendMail">${ic('send')} Gửi</button></div></div></div>`;
+}
+
+/* ======================= Hành động ======================= */
+let toastT;
+function toast(m){ const t=document.getElementById('toast'); t.innerHTML=`<div class="toast" role="status">${esc(m)}</div>`; clearTimeout(toastT); toastT=setTimeout(()=>{t.innerHTML='';},2600); }
+function readForm(v){
+  const g=id=>document.getElementById(id);
+  v.website=g('f_website').value.trim(); v.group=g('f_group').value; v.name=g('f_name').value.trim(); v.mang=g('f_mang').value; v.country=g('f_country').value;
+  if(!g('f_coop').disabled) v.coopType=g('f_coop').value;
+  v.contact.name=g('f_cname').value.trim(); v.schedule=g('f_sched').value;
+  if(!g('f_sign').disabled){ v.signDate=g('f_sign').value; v.expireDate=g('f_exp').value; }
+  v.note=g('f_note').value; v.desc=g('f_desc').value; v.project=g('f_project').value.trim(); v.priority=g('f_prio').value; v.deadline=g('f_deadline').value;
+  v.contact.title=g('f_ctitle').value.trim(); v.contact.email=g('f_cemail').value.trim(); v.contact.phone=g('f_cphone').value.trim();
+  ['KT','XNK','KD'].forEach(d=>v.owners[d]=[...document.querySelectorAll(`.f_owner[data-d="${d}"]:checked`)].map(i=>i.value));
+  v.label='HÃNG/'+(v.name.split(' ')[0]||'').toUpperCase();
+}
+function addFiles(v,list,cat){
+  [...list].forEach(f=>{ const kb=f.size/1024; v.files.push({id:uid(),name:f.name,cat,size:kb>1024?(kb/1024).toFixed(1).replace('.',',')+' MB':Math.max(1,Math.round(kb))+' KB',date:iso(TODAY),by:ME,src:'Tải lên',url:URL.createObjectURL(f)}); addLog(v,`Tải lên ${f.name} (${cat})`); });
+  render(); toast(`Đã lưu ${list.length} file vào mục ${cat}`);
+}
+function bindDrop(){
+  const d=document.getElementById('drop'); if(!d) return;
+  d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over');});
+  d.addEventListener('dragleave',()=>d.classList.remove('over'));
+  d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');const v=byId(S.openId);if(e.dataTransfer.files.length) addFiles(v,e.dataTransfer.files,document.getElementById('upCat').value);});
+}
+
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-a]'); if(!el) return;
+  const a=el.dataset.a; const v=S.openId?byId(S.openId):null;
+  switch(a){
+    case 'view': S.view=el.dataset.v; S.openId=null; render(); break;
+    case 'mode': S.mode=el.dataset.v; render(); break;
+    case 'stagef': S.stage=S.stage===el.dataset.v?'all':el.dataset.v; render(); break;
+    case 'toast': toast(el.dataset.t); break;
+    case 'open': S.anim=true; S.openId=el.dataset.id; S.tab='flow'; S.openThread=null; renderLayer(); break;
+    case 'openArchived': S.anim=true; S.openId=el.dataset.id; S.tab='flow'; renderLayer(); break;
+    case 'close': S.openId=null; renderLayer(); break;
+    case 'tab': S.tab=el.dataset.v; renderLayer(); document.querySelector('.d-body')?.scrollTo(0,0); break;
+    case 'task': { const s=el.dataset.s,j=+el.dataset.j; v.tasks[s][j]=el.checked; if(el.checked) addLog(v,`Hoàn thành: ${STAGES[SIDX[s]].tasks[j]}`); render(); break; }
+    case 'gate': { const s=STAGES[SIDX[v.stage]]; const note=document.getElementById('gateNote').value.trim();
+      if(el.dataset.r==='NotOK' && !note){ toast('Nhập lý do Not OK để P.KT có căn cứ tìm phương án khác'); return; }
+      v.gates[s.id]={result:el.dataset.r,by:ME,date:iso(TODAY),comment:note||'OK'};
+      addLog(v,`${s.name}: ${el.dataset.r==='OK'?'OK':'Not OK'}${note?' · '+note:''}`);
+      if(el.dataset.r==='NotOK'){ v.status='hold'; v.hold={stage:v.stage,reason:s.id==='s4'?'Không khả thi nhập khẩu':'Giá không cạnh tranh',by:ME,date:iso(TODAY),comment:note}; toast('Đã chuyển hồ sơ sang Tạm dừng / Không đạt'); }
+      render(); break; }
+    case 'gateReset': delete v.gates[v.stage]; render(); break;
+    case 'advance': { const cur=SIDX[v.stage]; v.stage=STAGES[cur+1].id; v.stageSince=iso(TODAY); addLog(v,`Chuyển sang bước ${cur+2}: ${STAGES[cur+1].name}`); render(); toast(`Đã chuyển sang ${STAGES[cur+1].name}. Đã báo cho ${DEPTS[STAGES[cur+1].dept]}.`); break; }
+    case 'back': { const cur=SIDX[v.stage]; v.stage=STAGES[cur-1].id; v.stageSince=iso(TODAY); delete v.gates[STAGES[cur-1].id]; addLog(v,`Trả về bước ${cur}: ${STAGES[cur-1].name}`); render(); break; }
+    case 'holdForm': S.modal=modalHold; renderLayer(); break;
+    case 'doHold': v.status='hold'; v.hold={stage:v.stage,reason:document.getElementById('h_reason').value,by:ME,date:iso(TODAY),comment:document.getElementById('h_note').value}; addLog(v,'Tạm dừng: '+v.hold.reason); S.modal=null; render(); break;
+    case 'reopen': v.status='active'; delete v.gates[v.hold.stage]; addLog(v,'Mở lại hồ sơ'); v.hold=null; v.stageSince=iso(TODAY); render(); break;
+    case 'transfer': S.modal=modalTransfer; renderLayer(); break;
+    case 'doTransfer': v.status='done'; v.doneDate=iso(TODAY); addLog(v,'Chuyển sang Quản lý thông tin NCC');
+      NCC.unshift({name:v.name,group:v.group,country:v.country,mang:v.mang,website:v.website,coop:v.coopType,owners:JSON.parse(JSON.stringify(v.owners)),fromPipe:v.id});
+      S.fresh=v.name; S.modal=null; S.openId=null; S.view='ncc'; render(); break;
+    case 'saveInfo': readForm(v); if(!v.name||!v.website){toast('Tên NCC và Website là bắt buộc');return;} addLog(v,'Cập nhật thông tin hãng'); render(); toast('Đã lưu thông tin hãng'); break;
+    case 'new': S.draft=blankVendor(); S.modal=modalNew; renderLayer(); break;
+    case 'createVendor': { const d=S.draft; readForm(d); if(!d.name||!d.website){ document.getElementById('newErr').innerHTML='<div class="note bad">Nhập Tên NCC và Website. Website dùng để tự khớp email với hãng.</div>'; return; }
+      d.log=[{d:iso(TODAY),who:ME,t:'Tạo hồ sơ hãng'}]; vendors.unshift(d); S.modal=null; S.openId=d.id; S.tab='flow'; render(); toast('Đã tạo hồ sơ hãng ở bước Tìm kiếm & tiếp cận'); break; }
+    case 'closeModal': S.modal=null; renderLayer(); break;
+    case 'thread': S.openThread=S.openThread===el.dataset.id?null:el.dataset.id; { const t=v.emails.find(t=>t.id===el.dataset.id); if(t) t.unread=false; } renderLayer(); break;
+    case 'saveAtt': { const t=v.emails.find(t=>t.id===el.dataset.t); const n=el.dataset.n; const cat=/quot|báo giá/i.test(n)?'Báo giá hãng':/nda/i.test(n)?'NDA':/datasheet/i.test(n)?'Datasheet':/catalog|brochure|portfolio/i.test(n)?'Catalog':'Khác';
+      v.files.push({id:uid(),name:n,cat,size:el.dataset.sz,date:iso(TODAY),by:ME,src:'Gmail'}); addLog(v,`Lưu ${n} từ email “${t.subject}” vào Tài liệu (${cat})`); render(); toast(`Đã lưu vào Tài liệu · mục ${cat}`); break; }
+    case 'sync': { el.disabled=true; el.innerHTML=ic('sync')+' Đang đồng bộ…'; setTimeout(()=>{
+      const now=new Date(); S.synced[v.id]=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      if(v.contact.email && !v._synced){ v._synced=true; v.emails.push({id:uid(),subject:`RE: ${v.emails[0]?.subject||'Follow-up'}`,unread:true,msgs:[mail(v.contact.email,v.contact.name||v.contact.email,iso(TODAY),'Hi,\nJust following up on our previous email. Let us know if you need any further information.\nBest regards',[])]}); addLog(v,'Đồng bộ Gmail: 1 email mới'); render(); toast('Có 1 email mới từ hãng'); }
+      else { render(); toast('Không có email mới'); } },900); break; }
+    case 'compose': S.compose={tpl:'',to:v.contact.email,cc:[...v.owners.XNK,...v.owners.KD].map(k=>k.toLowerCase()+'@aipt.vn').join(', '),sub:'',body:''}; S.modal=modalCompose; renderLayer(); break;
+    case 'tpl': { const [sub,body]=TEMPLATES[el.dataset.v](v); Object.assign(S.compose,{tpl:el.dataset.v,to:document.getElementById('c_to').value,cc:document.getElementById('c_cc').value,sub,body}); renderLayer(); break; }
+    case 'sendMail': { const sub=document.getElementById('c_sub').value.trim(), body=document.getElementById('c_body').value, to=document.getElementById('c_to').value.trim();
+      if(!to||!sub){ toast('Nhập người nhận và tiêu đề'); return; }
+      v.emails.push({id:uid(),subject:sub,unread:false,msgs:[mail('me',USERS[ME].name,iso(TODAY),body)]}); addLog(v,`Gửi email: ${sub}`); S.modal=null; render(); toast('Đã thêm vào lịch sử (mô phỏng gửi)'); break; }
+    case 'delFile': { const f=v.files.find(f=>f.id===el.dataset.id); v.files=v.files.filter(x=>x!==f); addLog(v,`Xóa tài liệu ${f.name}`); render(); break; }
+    case 'addLine': v.quote.lines.push({model:'',desc:'',qty:1,price:0}); render(); break;
+    case 'delLine': v.quote.lines.splice(+el.dataset.i,1); render(); break;
+    case 'addComp': v.market.comps.push({name:'',price:0}); render(); break;
+    case 'need': v.market.need=+el.dataset.v; render(); break;
+  }
+});
+document.addEventListener('change',e=>{
+  const t=e.target; const v=S.openId?byId(S.openId):null;
+  if(t.id==='mine'){ S.mine=t.checked; render(); return; }
+  if(t.id==='upFile' && v){ addFiles(v,t.files,document.getElementById('upCat').value); return; }
+  if(!v) return;
+  if(t.dataset.q){ v.quote[t.dataset.q]= ['currency','incoterm'].includes(t.dataset.q)?t.value:+t.value; render(); }
+  else if(t.dataset.l!=null){ const l=v.quote.lines[+t.dataset.l]; l[t.dataset.k]=['qty','price'].includes(t.dataset.k)?+t.value:t.value; render(); }
+  else if(t.dataset.x){ v.xnk[t.dataset.x]=t.value; }
+  else if(t.dataset.m){ v.market[t.dataset.m]=+t.value; render(); }
+  else if(t.dataset.c!=null){ const c=v.market.comps[+t.dataset.c]; c[t.dataset.k]=t.dataset.k==='price'?+t.value:t.value; render(); }
+});
+document.addEventListener('input',e=>{ if(e.target.id==='q'){ S.q=e.target.value; const pos=e.target.selectionStart; render(); const q=document.getElementById('q'); q.focus(); q.setSelectionRange(pos,pos);} });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(S.modal){S.modal=null;renderLayer();} else if(S.openId){S.openId=null;renderLayer();} } });
+
+render();
+</script>
+
+</body>
+</html>
