@@ -292,10 +292,10 @@ const STAGES = [
    tasks:['Xin catalog, datasheet','Họp kỹ thuật với hãng','Đánh giá tính năng / TSKT so với yêu cầu','Đề xuất demo (mượn thiết bị, demo online hoặc video)'], docs:['Catalog','Datasheet']},
   {id:'s3', name:'Xin báo giá', short:'Báo giá', dept:'KT',
    desc:'Gửi yêu cầu báo giá, lập cấu hình kỹ thuật, chuyển hồ sơ cho P.XNK.',
-   tasks:['Gửi yêu cầu báo giá cho hãng','Nhận báo giá của hãng (EXW / FOB / CIF)','Lập bảng cấu hình kỹ thuật','Chuyển hồ sơ cho P.XNK'], docs:['Báo giá hãng','Cấu hình kỹ thuật']},
+   tasks:['Ký NDA với hãng (hãng yêu cầu trước khi báo giá)','Gửi yêu cầu báo giá cho hãng','Nhận báo giá của hãng (EXW / FOB / CIF)','Lập bảng cấu hình kỹ thuật','Chuyển hồ sơ cho P.XNK'], docs:['Báo giá hãng','Cấu hình kỹ thuật']},
   {id:'s4', name:'Đánh giá XNK', short:'Đánh giá XNK', dept:'XNK', gate:true,
-   desc:'P.XNK đánh giá khả thi nhập khẩu, chứng từ CO/CQ, tính giá dự án, khả năng bảo vệ dự án.',
-   tasks:['Kiểm tra HS code, giấy phép, kiểm tra chuyên ngành','Xác nhận hãng cấp được CO, CQ','Tính giá dự án (giá về kho)','Đánh giá khả năng bảo vệ dự án'], docs:['Bảng tính giá']},
+   desc:'P.XNK đánh giá khả thi nhập khẩu, chứng từ CO/CQ, điền giá dự án tạm tính, khả năng bảo vệ dự án.',
+   tasks:['Kiểm tra HS code, giấy phép, kiểm tra chuyên ngành','Xác nhận hãng cấp được CO, CQ','Điền giá dự án tạm tính','Đánh giá khả năng bảo vệ dự án'], docs:[]},
   {id:'s5', name:'Đánh giá thị trường', short:'Đánh giá KD', dept:'KD', gate:true,
    desc:'PKD đánh giá nhu cầu thị trường, giá có đủ cạnh tranh, chốt Go / No-go.',
    tasks:['Đánh giá nhu cầu thị trường','So sánh giá với đối thủ','Hoàn thiện bảng so sánh đối thủ','Chốt Go / No-go'], docs:['So sánh đối thủ']},
@@ -303,6 +303,10 @@ const STAGES = [
    desc:'P.XNK ký NDA, đàm phán loại hình hợp tác (Reseller / Distributor / Độc quyền) và ký kết.',
    tasks:['Ký NDA','Đàm phán loại hình hợp tác','Rà soát thỏa thuận phân phối','Ký kết hợp tác'], docs:['NDA','Thỏa thuận phân phối']},
 ];
+// NDA ký ở bước 3 nếu hãng yêu cầu trước khi báo giá, ngược lại ký ở bước 6
+const hiddenTask = (v,sid,j) => j===0 && ((sid==='s3' && !v.ndaFirst) || (sid==='s6' && v.ndaFirst));
+const visTasks = (v,sid) => STAGES[SIDX[sid]].tasks.map((t,j)=>[t,j]).filter(([,j])=>!hiddenTask(v,sid,j));
+const docsFor = (v,sid) => sid==='s3' && v.ndaFirst ? ['NDA',...STAGES[SIDX[sid]].docs] : STAGES[SIDX[sid]].docs;
 const SIDX = Object.fromEntries(STAGES.map((s,i)=>[s.id,i]));
 const DEPTS = {KT:'P. Kỹ thuật', XNK:'P. Xuất nhập khẩu', KD:'P. Kinh doanh'};
 const USERS = {
@@ -315,12 +319,15 @@ const USERS = {
   TVH:{name:'Trần Văn Hiếu', dept:'KD', c:'#1c7ed6'},
 };
 const ME = 'LXTM';
+const MAIL_DOMAIN = 'aiptgroup.com';
+const addrOfKey = k => k.toLowerCase()+'@'+MAIL_DOMAIN;
+const addrOf = name => { const k=Object.keys(USERS).find(k=>USERS[k].name===name); return k?addrOfKey(k):'@'+MAIL_DOMAIN; };
 const GROUPS = ['NSX','NPP','Đại lý'];
 const MANGS = ['A05','A06','C09','An Ninh','Thiết bị an ninh','UAV','Khác'];
 const COUNTRIES = ['Mỹ','Anh','Đức','Pháp','Ý','Thụy Điển','Phần Lan','Israel','Nhật Bản','Hàn Quốc','Singapore','Trung Quốc','Việt Nam'];
 const COOPS = ['Chưa xác định','NDA','Reseller','Distributor','Độc quyền'];
 const SCHED = ['Tuần','Tháng','Quý','Năm'];
-const FILECATS = ['Catalog','Datasheet','HDSD','Báo giá hãng','Cấu hình kỹ thuật','Bảng tính giá','So sánh đối thủ','CO / CQ mẫu','NDA','Thỏa thuận phân phối','Khác'];
+const FILECATS = ['Catalog','Datasheet','HDSD','Báo giá hãng','Cấu hình kỹ thuật','So sánh đối thủ','CO / CQ mẫu','NDA','Thỏa thuận phân phối','Khác'];
 const HOLD_REASONS = ['Không đáp ứng TSKT','Giá không cạnh tranh','Không khả thi nhập khẩu','Hãng không phản hồi','Thị trường không có nhu cầu','Khác'];
 
 /* ======================= Tiện ích ======================= */
@@ -358,9 +365,9 @@ function tasksUpTo(stage, partial){ // tick các bước trước stage, và par
 }
 function mail(from, fromName, d, body, atts){ return {from, fromName, date:d, body, attachments:atts||[]}; }
 function V(o){
-  const base = {id:uid(), group:'NSX', coopType:'Chưa xác định', schedule:'Tháng', signDate:'', expireDate:'', note:'', desc:'', status:'active', priority:'Thường',
+  const base = {id:uid(), ndaFirst:false, group:'NSX', coopType:'Chưa xác định', schedule:'Tháng', signDate:'', expireDate:'', note:'', desc:'', status:'active', priority:'Thường',
     gates:{}, files:[], emails:[], log:[], label:'', hold:null,
-    quote:{currency:'USD', incoterm:'FOB', fx:25450, freight:0, insurance:0, duty:0, vat:10, other:0, margin:18, lines:[]},
+    quote:{currency:'USD', incoterm:'FOB', fx:25450, lines:[], note:'', estBy:'', estDate:''},
     xnk:{hs:'', license:'Không yêu cầu', co:'Chưa xác nhận', cq:'Chưa xác nhận', special:'', comment:''},
     market:{need:3, target:0, comps:[], comment:''}};
   const v = Object.assign(base,o);
@@ -387,11 +394,11 @@ const SAMPLE = [
   V({name:'Helix Forensics Ltd', website:'www.helixforensics.co.uk', country:'Anh', mang:'A05', stage:'s4', partial:2, stageSince:ago(3), created:ago(41), deadline:ahead(4), priority:'Gấp',
     project:'Thiết bị trích xuất dữ liệu di động', contact:{name:'Sarah Whitmore', title:'Channel Director APAC', email:'s.whitmore@helixforensics.co.uk', phone:'+44 20 7946 0321'},
     owners:{XNK:['NMH','CXN'], KD:['TVH'], KT:['NHT']}, desc:'Giải pháp giám định số: trích xuất, phân tích dữ liệu thiết bị di động và máy tính.',
-    files:[{id:uid(),name:'Helix_Product_Portfolio.pdf',cat:'Catalog',size:'5,1 MB',date:ago(35),by:'NHT',src:'Gmail'},{id:uid(),name:'Helix_Quotation_Q-26-1184.pdf',cat:'Báo giá hãng',size:'310 KB',date:ago(8),by:'NHT',src:'Gmail'},{id:uid(),name:'Cau_hinh_ky_thuat_Helix_Mobile.docx',cat:'Cấu hình kỹ thuật',size:'96 KB',date:ago(5),by:'NHT',src:'Tải lên'}],
-    quote:{currency:'GBP', incoterm:'FOB', fx:33200, freight:420, insurance:60, duty:0, vat:10, other:6500000, margin:22, lines:[
-      {model:'Helix Mobile Kit Pro', desc:'Bộ trích xuất dữ liệu di động, kèm license 1 năm', qty:2, price:11800},
-      {model:'Helix Analyze Desktop', desc:'Phần mềm phân tích, license 1 năm', qty:2, price:3900},
-      {model:'Training L1', desc:'Đào tạo online 3 ngày', qty:1, price:2400}]},
+    files:[{id:uid(),name:'Helix_Mutual_NDA_signed.pdf',cat:'NDA',size:'290 KB',date:ago(15),by:'NHT',src:'Gmail'},{id:uid(),name:'Helix_Product_Portfolio.pdf',cat:'Catalog',size:'5,1 MB',date:ago(35),by:'NHT',src:'Gmail'},{id:uid(),name:'Helix_Quotation_Q-26-1184.pdf',cat:'Báo giá hãng',size:'310 KB',date:ago(8),by:'NHT',src:'Gmail'},{id:uid(),name:'Cau_hinh_ky_thuat_Helix_Mobile.docx',cat:'Cấu hình kỹ thuật',size:'96 KB',date:ago(5),by:'NHT',src:'Tải lên'}],
+    ndaFirst:true, quote:{currency:'GBP', incoterm:'FOB', fx:33200, note:'Chưa gồm phí xin giấy phép mật mã dân sự.', estBy:'NMH', estDate:ago(1), lines:[
+      {model:'Helix Mobile Kit Pro', desc:'Bộ trích xuất dữ liệu di động, kèm license 1 năm', qty:2, price:11800, est:480000000},
+      {model:'Helix Analyze Desktop', desc:'Phần mềm phân tích, license 1 năm', qty:2, price:3900, est:160000000},
+      {model:'Training L1', desc:'Đào tạo online 3 ngày', qty:1, price:2400, est:98000000}]},
     xnk:{hs:'8471.30.20', license:'Cần giấy phép mật mã dân sự (Ban Cơ yếu)', co:'Có (Form UK)', cq:'Có', special:'Phần mềm có chức năng mã hóa, cần hồ sơ xin phép NK sản phẩm mật mã dân sự.', comment:''},
     emails:[{id:uid(), subject:'RE: Quotation request – Mobile Kit Pro x2', unread:false, msgs:[
       mail('me','Nguyễn Hữu Thành',ago(12),'Dear Sarah,\nPlease quote 2 units of Mobile Kit Pro with Analyze Desktop, FOB London, incl. 1-year license.\nThanh'),
@@ -401,17 +408,17 @@ const SAMPLE = [
     project:'UAV trinh sát tầm ngắn', contact:{name:'Jonas Becker', title:'Head of Sales Asia', email:'j.becker@aerolynx.de', phone:'+49 89 2190 7781'},
     owners:{XNK:['CXN'], KD:['KTD','TVH'], KT:['VNA']}, desc:'Hãng UAV cánh cố định và VTOL cho trinh sát, cứu hộ.',
     gates:{s4:{result:'OK', by:'CXN', date:ago(5), comment:'Không thuộc danh mục cấm. CO Đức, CQ hãng cấp. Thuế NK 0% theo EVFTA với HS 8806.'}},
-    quote:{currency:'EUR', incoterm:'FCA', fx:29100, freight:1800, insurance:240, duty:0, vat:10, other:12000000, margin:20, lines:[{model:'Lynx VT-2 Kit', desc:'2 UAV, trạm điều khiển, payload EO/IR', qty:1, price:86500}]},
+    quote:{currency:'EUR', incoterm:'FCA', fx:29100, note:'Đã gồm cước air và phí xin phép BQP.', estBy:'CXN', estDate:ago(5), lines:[{model:'Lynx VT-2 Kit', desc:'2 UAV, trạm điều khiển, payload EO/IR', qty:1, price:86500, est:3050000000}]},
     xnk:{hs:'8806.22.00', license:'Giấy phép NK tàu bay không người lái (BQP)', co:'Có (EUR.1)', cq:'Có', special:'', comment:'Đã kiểm tra.'},
     market:{need:4, target:3150000000, comps:[{name:'Đối thủ A (UAV Mỹ)', price:3600000000},{name:'Đối thủ B (UAV Trung Quốc)', price:2100000000}], comment:''},
-    files:[{id:uid(),name:'Aerolynx_VT2_Brochure.pdf',cat:'Catalog',size:'12 MB',date:ago(50),by:'VNA',src:'Gmail'},{id:uid(),name:'VT2_Quote_EUR.pdf',cat:'Báo giá hãng',size:'220 KB',date:ago(20),by:'VNA',src:'Gmail'},{id:uid(),name:'Tinh_gia_Aerolynx_VT2.xlsx',cat:'Bảng tính giá',size:'48 KB',date:ago(6),by:'CXN',src:'Tải lên'}],
+    files:[{id:uid(),name:'Aerolynx_VT2_Brochure.pdf',cat:'Catalog',size:'12 MB',date:ago(50),by:'VNA',src:'Gmail'},{id:uid(),name:'VT2_Quote_EUR.pdf',cat:'Báo giá hãng',size:'220 KB',date:ago(20),by:'VNA',src:'Gmail'},{id:uid(),name:'Tinh_gia_tam_tinh_Aerolynx_VT2.xlsx',cat:'Khác',size:'48 KB',date:ago(6),by:'CXN',src:'Tải lên'}],
     log:[{d:ago(58),who:'VNA',t:'Tạo hồ sơ hãng'},{d:ago(5),who:'CXN',t:'Đánh giá XNK: OK'},{d:ago(5),who:'CXN',t:'Chuyển sang Đánh giá thị trường'}]}),
   V({name:'Sentra Vision Co., Ltd', website:'www.sentravision.kr', country:'Hàn Quốc', mang:'An Ninh', stage:'s1', partial:2, stageSince:ago(2), created:ago(2), deadline:ahead(20),
     project:'Camera AI nhận diện khuôn mặt', contact:{name:'Kim Ji-hoon', title:'Overseas Sales', email:'jh.kim@sentravision.kr', phone:'+82 2 6012 4410'}, owners:{XNK:['NMH'], KD:[], KT:['LXTM']},
     log:[{d:ago(2),who:'LXTM',t:'Tạo hồ sơ hãng'}]}),
-  V({name:'Kairos Acoustics KK', website:'www.kairos-acoustics.jp', country:'Nhật Bản', mang:'Thiết bị an ninh', stage:'s3', partial:1, stageSince:ago(16), created:ago(37), deadline:ago(2),
+  V({name:'Kairos Acoustics KK', website:'www.kairos-acoustics.jp', country:'Nhật Bản', mang:'Thiết bị an ninh', stage:'s3', partial:2, ndaFirst:true, stageSince:ago(16), created:ago(37), deadline:ago(2),
     project:'Thiết bị ghi âm chuyên dụng', contact:{name:'Takeshi Mori', title:'International Business', email:'t.mori@kairos-acoustics.jp', phone:'+81 3 4520 7712'}, owners:{XNK:['NMH'], KD:['KTD'], KT:['NHT']},
-    files:[{id:uid(),name:'Kairos_Catalog_EN.pdf',cat:'Catalog',size:'3,3 MB',date:ago(30),by:'NHT',src:'Gmail'}],
+    files:[{id:uid(),name:'Kairos_NDA_signed.pdf',cat:'NDA',size:'350 KB',date:ago(10),by:'NHT',src:'Gmail'},{id:uid(),name:'Kairos_Catalog_EN.pdf',cat:'Catalog',size:'3,3 MB',date:ago(30),by:'NHT',src:'Gmail'}],
     log:[{d:ago(37),who:'NHT',t:'Tạo hồ sơ hãng'},{d:ago(16),who:'NHT',t:'Chuyển sang bước Xin báo giá'}]}),
   V({name:'Quantis Radio Systems', website:'www.quantisradio.co.il', country:'Israel', mang:'C09', stage:'s6', partial:1, stageSince:ago(9), created:ago(96), deadline:ahead(15), coopType:'Distributor',
     project:'Thiết bị thông tin vô tuyến', contact:{name:'Avi Shapira', title:'VP Business Development', email:'avi@quantisradio.co.il', phone:'+972 3 761 2290'}, owners:{XNK:['CXN','NMH'], KD:['TVH'], KT:['VNA']},
@@ -434,7 +441,7 @@ const SAMPLE = [
 ];
 // Thêm email mẫu ngắn cho các hãng chưa có
 SAMPLE.forEach(v=>{ if(!v.emails.length && v.contact.email){ v.emails=[{id:uid(), subject:`Introduction – AIPT Vietnam × ${v.name}`, unread:false, msgs:[
-  mail('me',USERS[v.owners.KT[0]]?.name||'AIPT',v.created,`Dear ${v.contact.name||'Sir/Madam'},\nWe are AIPT, a solution provider in Vietnam. We would like to explore cooperation on your products for the ${v.project} segment.\nBest regards`),
+  mail('me',USERS[v.owners.KT[0]]?.name||USERS[ME].name,v.created,`Dear ${v.contact.name||'Sir/Madam'},\nWe are AIPT, a solution provider in Vietnam. We would like to explore cooperation on your products for the ${v.project} segment.\nBest regards`),
   ...(daysSince(v.created)>2?[mail(v.contact.email,v.contact.name,ago(Math.max(0,daysSince(v.created)-2)),'Thank you for your interest. Please find our catalog attached.',[{name:v.name.split(' ')[0]+'_Catalog.pdf',size:'4,2 MB'}])]:[])]}];}});
 
 const NCC = [
@@ -450,9 +457,10 @@ const S = { view:'pipe', mode:'kanban', q:'', stage:'all', mine:false, openId:nu
 let vendors = SAMPLE;
 const byId = id => vendors.find(v=>v.id===id);
 const active = () => vendors.filter(v=>v.status==='active');
-const stageTasksDone = (v,sid) => (v.tasks[sid]||[]).filter(Boolean).length;
-const missingDocs = (v,sid) => STAGES[SIDX[sid]].docs.filter(c=>!v.files.some(f=>f.cat===c));
-const overallPct = v => { const all=STAGES.flatMap(s=>v.tasks[s.id]); return Math.round(all.filter(Boolean).length/all.length*100); };
+const stageTasksDone = (v,sid) => visTasks(v,sid).filter(([,j])=>v.tasks[sid][j]).length;
+const stageTotal = (v,sid) => visTasks(v,sid).length;
+const missingDocs = (v,sid) => docsFor(v,sid).filter(c=>!v.files.some(f=>f.cat===c));
+const overallPct = v => { const all=STAGES.flatMap(s=>visTasks(v,s.id).map(([,j])=>v.tasks[s.id][j])); return Math.round(all.filter(Boolean).length/all.length*100); };
 const isLate = v => v.status==='active' && v.deadline && new Date(v.deadline+'T12:00:00')<TODAY;
 const addLog = (v,t,who=ME) => v.log.push({d:iso(TODAY),who,t});
 
@@ -519,14 +527,14 @@ function renderPipe(){
 }
 
 function cardHtml(v){
-  const s=STAGES[SIDX[v.stage]]; const done=stageTasksDone(v,v.stage);
+  const done=stageTasksDone(v,v.stage), total=stageTotal(v,v.stage);
   const owners=[...v.owners.KT,...v.owners.XNK,...v.owners.KD];
   return `<button class="card ${isLate(v)?'late':''}" data-a="open" data-id="${v.id}">
     <div style="display:flex;gap:6px;align-items:flex-start"><span class="nm">${esc(v.name)}</span>${v.priority==='Gấp'?'<span class="pill bad" style="margin-left:auto">Gấp</span>':''}</div>
     <div class="meta"><span>${esc(v.country)}</span><span>${esc(v.mang)}</span><span>${esc(v.project||'')}</span></div>
     ${v.status==='hold'?`<div class="note bad" style="padding:5px 8px;font-size:12px">${esc(v.hold.reason)} · tại ${STAGES[SIDX[v.hold.stage]].short}</div>`:
-    `<div style="display:flex;flex-direction:column;gap:4px"><div class="bar"><i style="width:${done/s.tasks.length*100}%"></i></div>
-      <div class="ft"><span class="num">${done}/${s.tasks.length} việc</span><span class="num" style="${isLate(v)?'color:var(--bad);font-weight:600':''}">${v.deadline?(isLate(v)?'Trễ '+daysSince(v.deadline)+' ngày':'Hạn '+fmtD(v.deadline).slice(0,5)):''}</span></div></div>`}
+    `<div style="display:flex;flex-direction:column;gap:4px"><div class="bar"><i style="width:${done/total*100}%"></i></div>
+      <div class="ft"><span class="num">${done}/${total} việc</span><span class="num" style="${isLate(v)?'color:var(--bad);font-weight:600':''}">${v.deadline?(isLate(v)?'Trễ '+daysSince(v.deadline)+' ngày':'Hạn '+fmtD(v.deadline).slice(0,5)):''}</span></div></div>`}
     <div class="ft">${avs(owners)}<span class="r"><span title="Email">${ic('mail')}${v.emails.length}</span><span title="Tài liệu">${ic('file')}${v.files.length}</span><span title="Số ngày ở bước này" class="num">${daysSince(v.stageSince||v.created)}d</span></span></div>
   </button>`;
 }
@@ -574,7 +582,7 @@ function renderLayer(){
 }
 function renderDrawer(v){
   const cur=SIDX[v.stage]; const s=STAGES[cur]; const archived=v.status==='done';
-  const tabs=[['flow','Quy trình'],['info','Thông tin hãng'],['mail','Email',v.emails.length],['files','Tài liệu',v.files.length],['quote','Báo giá & giá dự án'],['eval','Đánh giá XNK / KD'],['log','Nhật ký',v.log.length]];
+  const tabs=[['flow','Quy trình'],['info','Thông tin hãng'],['mail','Email',v.emails.length],['files','Tài liệu',v.files.length],['quote','Báo giá & giá tạm tính'],['eval','Đánh giá XNK / KD'],['log','Nhật ký',v.log.length]];
   return `<div class="scrim" data-a="close"></div>
   <aside class="drawer${S.anim?' enter':''}" role="dialog" aria-label="${esc(v.name)}">
     <div class="d-head">
@@ -597,7 +605,7 @@ function renderDrawer(v){
 
 function advanceBlockers(v){
   const s=STAGES[SIDX[v.stage]]; const b=[];
-  const left=s.tasks.length-stageTasksDone(v,v.stage); if(left) b.push(`Còn ${left} việc chưa hoàn thành`);
+  const left=stageTotal(v,v.stage)-stageTasksDone(v,v.stage); if(left) b.push(`Còn ${left} việc chưa hoàn thành`);
   const md=missingDocs(v,v.stage); if(md.length) b.push('Thiếu tài liệu: '+md.join(', '));
   if(s.gate && v.gates[s.id]?.result!=='OK') b.push(`Cần ${DEPTS[s.dept]} duyệt OK`);
   if(s.id==='s6'){ if(v.coopType==='Chưa xác định') b.push('Chưa chọn loại hình hợp tác'); if(!v.signDate) b.push('Chưa nhập ngày ký hợp tác'); }
@@ -614,8 +622,9 @@ function tabFlow(v){
       <div class="panel-h"><span class="dept ${s.dept}">${s.dept}</span><h3>Bước ${cur+1}: ${s.name}</h3><div class="r hint">${daysSince(v.stageSince||v.created)} ngày ở bước này</div></div>
       <div class="panel-b">
         <div class="hint">${s.desc}</div>
-        <div class="chk">${s.tasks.map((t,j)=>{const on=v.tasks[s.id][j];return `<label><input type="checkbox" data-a="task" data-s="${s.id}" data-j="${j}" ${on?'checked':''} ${v.status!=='active'?'disabled':''}><span class="${on?'done-t':''}">${t}</span><span class="who">${(v.owners[s.dept]||[]).map(k=>k).join(', ')}</span></label>`;}).join('')}</div>
-        ${s.docs.length?`<div><div class="hint" style="margin-bottom:6px">Tài liệu cần có ở bước này</div><div class="req">${s.docs.map(d=>{const has=v.files.some(f=>f.cat===d);return `<span class="pill ${has?'ok':'warn'}">${has?ic('check'):''}${d}</span>`;}).join('')} <button class="btn sm ghost" data-a="tab" data-v="files">Mở Tài liệu ${ic('arrow')}</button></div></div>`:''}
+        ${s.id==='s3'?`<div class="note ${v.ndaFirst?'warn':''}">${v.ndaFirst?'Hãng yêu cầu ký NDA trước khi gửi báo giá.':'Hãng không yêu cầu NDA trước báo giá, NDA ký ở bước 6.'} <button class="btn sm ghost" data-a="tab" data-v="info">Đổi ở Thông tin hãng</button></div>`:''}
+        <div class="chk">${visTasks(v,s.id).map(([t,j])=>{const on=v.tasks[s.id][j];return `<label><input type="checkbox" data-a="task" data-s="${s.id}" data-j="${j}" ${on?'checked':''} ${v.status!=='active'?'disabled':''}><span class="${on?'done-t':''}">${t}</span><span class="who">${(v.owners[s.dept]||[]).map(k=>k).join(', ')}</span></label>`;}).join('')}</div>
+        ${docsFor(v,s.id).length?`<div><div class="hint" style="margin-bottom:6px">Tài liệu cần có ở bước này</div><div class="req">${docsFor(v,s.id).map(d=>{const has=v.files.some(f=>f.cat===d);return `<span class="pill ${has?'ok':'warn'}">${has?ic('check'):''}${d}</span>`;}).join('')} <button class="btn sm ghost" data-a="tab" data-v="files">Mở Tài liệu ${ic('arrow')}</button></div></div>`:''}
         ${s.gate?gateBox(v,s,g):''}
         ${v.status==='active'?`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px">
           ${last?`<button class="btn ok" data-a="transfer" ${blockers.length?'disabled':''}>${ic('arrow')} Hoàn tất &amp; chuyển sang Quản lý NCC</button>`:`<button class="btn pri" data-a="advance" ${blockers.length?'disabled':''}>Chuyển bước ${cur+2}: ${STAGES[cur+1].name} ${ic('arrow')}</button>`}
@@ -638,7 +647,7 @@ function tabFlow(v){
 const kvRow=(k,val)=>`<div style="display:flex;gap:12px;justify-content:space-between;align-items:baseline;font-size:13px"><span class="hint">${k}</span><span style="text-align:right">${val}</span></div>`;
 function lastMail(v){ const all=v.emails.flatMap(t=>t.msgs); if(!all.length) return '—'; const m=all.sort((a,b)=>a.date<b.date?1:-1)[0]; return `${fmtD(m.date)} · ${m.from==='me'?'gửi đi':'từ hãng'}`; }
 function gateBox(v,s,g){
-  const canDecide = v.status==='active' && stageTasksDone(v,s.id)===s.tasks.length;
+  const canDecide = v.status==='active' && stageTasksDone(v,s.id)===stageTotal(v,s.id);
   return `<div class="gate"><div style="display:flex;gap:8px;align-items:center"><b>Kết luận ${DEPTS[s.dept]}</b>
     ${g?`<span class="pill ${g.result==='OK'?'ok':'bad'}" style="margin-left:auto">${g.result==='OK'?'OK':'Not OK'} · ${USERS[g.by]?.name}, ${fmtD(g.date)}</span>`:'<span class="pill" style="margin-left:auto">Chưa kết luận</span>'}</div>
     ${g?`<div class="hint">${esc(g.comment)}</div>`:''}
@@ -650,7 +659,7 @@ function gateBox(v,s,g){
 }
 function allStagesSummary(v){
   return `<section class="panel"><div class="panel-h"><h3>Toàn bộ quy trình</h3><span class="hint">Theo QT phát triển sản phẩm / dự án</span></div><div class="tbl-wrap" style="border:0;border-radius:0 0 8px 8px"><table style="min-width:640px"><thead><tr><th>Bước</th><th>Phòng</th><th>Việc</th><th>Tài liệu</th><th>Kết luận</th></tr></thead><tbody>
-  ${STAGES.map((s,i)=>{const d=stageTasksDone(v,s.id),g=v.gates[s.id],md=missingDocs(v,s.id);return `<tr><td>${i+1}. ${s.name}</td><td><span class="dept ${s.dept}">${s.dept}</span></td><td class="num">${d}/${s.tasks.length}</td><td>${s.docs.length?(md.length?`<span class="pill warn">thiếu ${md.length}</span>`:'<span class="pill ok">đủ</span>'):'<span class="hint">—</span>'}</td><td>${s.gate?(g?`<span class="pill ${g.result==='OK'?'ok':'bad'}">${g.result==='OK'?'OK':'Not OK'}</span>`:'<span class="hint">chờ</span>'):'<span class="hint">—</span>'}</td></tr>`;}).join('')}
+  ${STAGES.map((s,i)=>{const d=stageTasksDone(v,s.id),g=v.gates[s.id],md=missingDocs(v,s.id);return `<tr><td>${i+1}. ${s.name}</td><td><span class="dept ${s.dept}">${s.dept}</span></td><td class="num">${d}/${stageTotal(v,s.id)}</td><td>${docsFor(v,s.id).length?(md.length?`<span class="pill warn">thiếu ${md.length}</span>`:'<span class="pill ok">đủ</span>'):'<span class="hint">—</span>'}</td><td>${s.gate?(g?`<span class="pill ${g.result==='OK'?'ok':'bad'}">${g.result==='OK'?'OK':'Not OK'}</span>`:'<span class="hint">chờ</span>'):'<span class="hint">—</span>'}</td></tr>`;}).join('')}
   </tbody></table></div></section>`;
 }
 
@@ -678,6 +687,7 @@ function formFields(v, isNew){
     <div class="fl"><label>Chức danh đầu mối</label><input class="field" id="f_ctitle" value="${esc(v.contact.title)}" placeholder="VD: Export Sales Manager" ${dis}></div>
     <div class="fl"><label>Email đầu mối <span class="hint" style="font-weight:400">(dùng để khớp Gmail)</span></label><input class="field" id="f_cemail" value="${esc(v.contact.email)}" placeholder="name@hang.com" ${dis}></div>
     <div class="fl"><label>Điện thoại</label><input class="field" id="f_cphone" value="${esc(v.contact.phone)}" ${dis}></div>
+    <div class="fl"><label>NDA</label><label style="display:flex;gap:8px;align-items:center;font-weight:400;min-height:36px"><input type="checkbox" id="f_nda" ${v.ndaFirst?'checked':''} ${dis} style="accent-color:var(--navy);width:15px;height:15px">Hãng yêu cầu ký NDA trước khi báo giá</label></div>
     <div class="fl"><label>Người phụ trách</label><div style="display:flex;flex-direction:column;gap:6px">${['KT','XNK','KD'].map(d=>`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="dept ${d}" style="width:38px;justify-content:center">${d}</span>${Object.entries(USERS).filter(([,u])=>u.dept===d).map(([k,u])=>`<label style="display:inline-flex;gap:4px;align-items:center;font-size:12.5px;font-weight:400"><input type="checkbox" class="f_owner" data-d="${d}" value="${k}" ${v.owners[d].includes(k)?'checked':''} ${dis} style="accent-color:var(--navy)">${u.name.split(' ').slice(-2).join(' ')}</label>`).join('')}</div>`).join('')}</div></div>
   </div>`;
 }
@@ -687,10 +697,10 @@ function tabInfo(v){
 
 /* --- Email --- */
 function tabMail(v){
-  const dom=domainOf(v.website); const sy=S.synced[v.id];
+  const dom=domainOf(v.website); const sy=S.synced[v.id]; const owners=[...new Set([...v.owners.KT,...v.owners.XNK,...v.owners.KD])];
   const threads=[...v.emails].sort((a,b)=>lastDate(b)>lastDate(a)?1:-1);
   return `<div class="mail-bar"><span class="gdot"></span><b>Gmail · Google Workspace</b>
-    <span class="hint">Tự gom email có địa chỉ <b>@${esc(dom||'—')}</b>${v.contact.email?` hoặc <b>${esc(v.contact.email)}</b>`:''}, và email gắn nhãn <span class="lbl">${esc(v.label)}</span> trong hộp thư của người phụ trách.</span>
+    <span class="hint">Gom email trao đổi với <b>@${esc(dom||'—')}</b>${v.contact.email?` / <b>${esc(v.contact.email)}</b>`:''} hoặc gắn nhãn <span class="lbl">${esc(v.label)}</span> từ hộp thư @${MAIL_DOMAIN} của ${owners.length} người phụ trách: ${owners.map(k=>esc(addrOfKey(k))).join(', ')||'chưa phân công'}. Email trùng (cùng thread, nhiều người CC) chỉ hiện một lần.</span>
     <span style="margin-left:auto;display:flex;gap:8px;align-items:center"><span class="hint">${sy?'Đồng bộ lúc '+sy:'Đồng bộ tự động 15 phút/lần'}</span>
     <button class="btn sm" data-a="sync" ${v.status==='done'?'disabled':''}>${ic('sync')} Đồng bộ</button><button class="btn sm pri" data-a="compose" ${v.status==='done'?'disabled':''}>${ic('send')} Soạn email</button></span></div>
   <section class="panel">
@@ -701,12 +711,12 @@ function tabMail(v){
 const lastDate = t => t.msgs[t.msgs.length-1].date;
 function threadHtml(v,t){
   const last=t.msgs[t.msgs.length-1]; const open=S.openThread===t.id;
-  const names=[...new Set(t.msgs.map(m=>m.from==='me'?'Tôi':m.fromName.split(' ')[0]))].join(', ');
+  const names=[...new Set(t.msgs.map(m=>m.from==='me'?m.fromName.split(' ').pop():m.fromName.split(' ')[0]))].join(', ');
   return `<div class="thread"><button class="th-row" data-a="thread" data-id="${t.id}">
     <span class="fr" style="${t.unread?'':'font-weight:500'}">${esc(names)} <span class="hint num">(${t.msgs.length})</span></span>
     <span class="sj"><span class="lbl">${esc(v.label)}</span><span style="${t.unread?'font-weight:600':''}">${esc(t.subject)}</span> <em>– ${esc(last.body.replace(/\n/g,' ').slice(0,90))}</em></span>
     <span class="dt num">${t.msgs.some(m=>m.attachments.length)?'📎 ':''}${fmtD(last.date)}</span></button>
-    ${open?`<div class="msgs">${t.msgs.map(m=>`<div class="msg"><div class="h"><b>${esc(m.fromName)}</b><span class="ad">${m.from==='me'?'gửi từ AIPT':esc(m.from)}</span><span class="dt num">${fmtD(m.date)}</span></div><p>${esc(m.body)}</p>
+    ${open?`<div class="msgs">${t.msgs.map(m=>`<div class="msg"><div class="h"><b>${esc(m.fromName)}</b><span class="ad">${m.from==='me'?esc(addrOf(m.fromName)):esc(m.from)}</span><span class="dt num">${fmtD(m.date)}</span></div><p>${esc(m.body)}</p>
       ${m.attachments.map(a=>{const saved=v.files.some(f=>f.name===a.name);return `<span class="att"><span class="fic" style="width:22px;height:26px;font-size:7px;background:${fileColor(a.name)}">${fileExt(a.name)}</span>${esc(a.name)} <span class="hint">${a.size}</span>${saved?'<span class="pill ok">Đã lưu</span>':`<button class="btn sm" data-a="saveAtt" data-t="${t.id}" data-n="${esc(a.name)}" data-sz="${esc(a.size)}">Lưu vào Tài liệu</button>`}</span>`;}).join('')}</div>`).join('')}
       <div><a class="btn sm" href="https://mail.google.com/" target="_blank" rel="noopener">Mở trong Gmail ${ic('arrow')}</a></div></div>`:''}</div>`;
 }
@@ -714,7 +724,7 @@ function threadHtml(v,t){
 /* --- Files --- */
 function tabFiles(v){
   const groups=FILECATS.map(c=>[c,v.files.filter(f=>f.cat===c)]).filter(([,a])=>a.length);
-  const needed=[...new Set(STAGES.flatMap(s=>s.docs))];
+  const needed=[...new Set(STAGES.flatMap(s=>docsFor(v,s.id)))];
   return `<section class="panel"><div class="panel-h"><h3>Hồ sơ tài liệu</h3><span class="hint">Lưu trên Google Drive, thư mục <b>NCC-Phát triển/${esc(v.name)}</b></span></div>
   <div class="panel-b">
     ${v.status==='done'?'':`<div class="drop" id="drop"><div style="flex:1;min-width:200px"><b>Kéo thả file vào đây</b><div class="hint">Catalog, datasheet, HDSD, báo giá, NDA, hợp đồng… hoặc lưu thẳng từ tệp đính kèm trong tab Email.</div></div>
@@ -729,45 +739,33 @@ function tabFiles(v){
 /* --- Quote & landed cost --- */
 function calcQuote(q){
   const ex = q.lines.reduce((a,l)=>a+(+l.qty||0)*(+l.price||0),0);
-  const cif = ex + (+q.freight||0) + (+q.insurance||0);
-  const cifV = cif*(+q.fx||0);
-  const duty = cifV*(+q.duty||0)/100;
-  const vat = (cifV+duty)*(+q.vat||0)/100;
-  const cost = cifV + duty + (+q.other||0);
-  const ratio = ex? cost/(ex) : 0; // VND giá vốn trên 1 đơn vị ngoại tệ giá hãng
-  const sell = cost*(1+(+q.margin||0)/100);
-  return {ex,cif,cifV,duty,vat,cost,ratio,sell};
+  const est = q.lines.reduce((a,l)=>a+(+l.qty||0)*(+l.est||0),0);
+  return {ex, conv:ex*(+q.fx||0), est, missing:q.lines.filter(l=>!(+l.est)).length};
 }
 function tabQuote(v){
   const q=v.quote, c=calcQuote(q), ro=v.status==='done'?'disabled':'';
   const m=v.market; const comps=m.comps.filter(x=>x.price>0);
   const minComp = comps.length?Math.min(...comps.map(x=>x.price)):0;
-  return `<section class="panel"><div class="panel-h"><h3>Báo giá của hãng</h3><span class="dept KT">KT nhập</span><div class="r">
+  return `<section class="panel"><div class="panel-h"><h3>Báo giá hãng &amp; giá tạm tính</h3><span class="dept KT">KT nhập giá hãng</span><span class="dept XNK">XNK điền giá tạm tính</span><div class="r">
     <select class="field" id="q_cur" data-q="currency" ${ro}>${opt(['USD','EUR','GBP','JPY','KRW','SGD'],q.currency)}</select>
-    <select class="field" id="q_inc" data-q="incoterm" ${ro}>${opt(['EXW','FCA','FOB','CIF','DAP'],q.incoterm)}</select></div></div>
-    <div class="tbl-wrap" style="border:0;border-radius:0"><table class="ql"><thead><tr><th style="width:22%">Model</th><th>Mô tả</th><th style="width:70px">SL</th><th style="width:130px">Đơn giá (${q.currency})</th><th style="width:130px" class="c">Giá vốn / đv (₫)</th><th style="width:130px" class="c">Giá dự án / đv (₫)</th><th style="width:40px"></th></tr></thead><tbody>
+    <select class="field" id="q_inc" data-q="incoterm" ${ro}>${opt(['EXW','FCA','FOB','CIF','DAP'],q.incoterm)}</select>
+    <label class="hint" style="display:flex;gap:6px;align-items:center">Tỷ giá tham khảo<input class="field num" style="width:96px" type="number" data-q="fx" value="${q.fx}" ${ro}></label></div></div>
+    <div class="tbl-wrap" style="border:0;border-radius:0"><table class="ql"><thead><tr><th style="width:20%">Model</th><th>Mô tả</th><th style="width:64px">SL</th><th style="width:120px">Đơn giá (${q.currency})</th><th style="width:120px;text-align:right">Quy đổi / đv (₫)</th><th style="width:150px;background:var(--xnk-soft)">Giá tạm tính / đv (₫)</th><th style="width:40px"></th></tr></thead><tbody>
     ${q.lines.map((l,i)=>`<tr><td><input data-l="${i}" data-k="model" value="${esc(l.model)}" ${ro}></td><td><input data-l="${i}" data-k="desc" value="${esc(l.desc)}" ${ro}></td><td><input class="r num" data-l="${i}" data-k="qty" type="number" min="0" value="${l.qty}" ${ro}></td><td><input class="r num" data-l="${i}" data-k="price" type="number" min="0" value="${l.price}" ${ro}></td>
-      <td class="num" style="text-align:right">${vnd((+l.price||0)*c.ratio)}</td><td class="num" style="text-align:right;font-weight:600">${vnd((+l.price||0)*c.ratio*(1+(+q.margin||0)/100))}</td><td>${ro?'':`<button class="btn sm ghost" data-a="delLine" data-i="${i}" aria-label="Xóa dòng">${ic('x')}</button>`}</td></tr>`).join('')||'<tr><td colspan="7" class="hint">Chưa có dòng báo giá</td></tr>'}
+      <td class="num hint" style="text-align:right">${vnd((+l.price||0)*(+q.fx||0))}</td><td style="background:var(--xnk-soft)"><input class="r num" data-l="${i}" data-k="est" type="number" min="0" value="${l.est||''}" placeholder="XNK điền" ${ro}></td><td>${ro?'':`<button class="btn sm ghost" data-a="delLine" data-i="${i}" aria-label="Xóa dòng">${ic('x')}</button>`}</td></tr>`).join('')||'<tr><td colspan="7" class="hint">Chưa có dòng báo giá</td></tr>'}
     </tbody></table></div>
-    <div class="panel-b" style="padding-top:8px">${ro?'':`<div><button class="btn sm" data-a="addLine">${ic('plus')} Thêm dòng</button></div>`}</div></section>
-
-  <section class="panel"><div class="panel-h"><h3>Tính giá dự án</h3><span class="dept XNK">XNK nhập</span><span class="hint">Giá vốn = CIF quy đổi + thuế NK + phí khác. VAT NK được khấu trừ nên tách riêng.</span></div>
-    <div class="panel-b">
-      <div class="inl">
-        ${numIn('Tỷ giá (₫ / '+q.currency+')','fx',q.fx,ro)}${numIn('Cước vận chuyển ('+q.currency+')','freight',q.freight,ro)}${numIn('Bảo hiểm ('+q.currency+')','insurance',q.insurance,ro)}${numIn('Phí khác: thông quan, kiểm định, nội địa (₫)','other',q.other,ro)}
-        ${numIn('Thuế NK (%)','duty',q.duty,ro)}${numIn('VAT NK (%)','vat',q.vat,ro)}${numIn('Biên lợi nhuận đề xuất (%)','margin',q.margin,ro)}
-      </div>
+    <div class="panel-b" style="padding-top:8px">${ro?'':`<div><button class="btn sm" data-a="addLine">${ic('plus')} Thêm dòng</button></div>`}
       <div class="calc">
         <div class="kv"><span>Tổng giá hãng (${q.incoterm})</span><b class="num">${money(c.ex,q.currency)}</b></div>
-        <div class="kv"><span>CIF quy đổi</span><b class="num">${vnd(c.cifV)} ₫</b></div>
-        <div class="kv"><span>Thuế NK · VAT NK (khấu trừ)</span><b class="num">${vnd(c.duty)} · ${vnd(c.vat)}</b></div>
-        <div class="kv"><span>Giá vốn về kho</span><b class="num">${vnd(c.cost)} ₫</b></div>
-        <div class="kv hl" style="grid-column:span 2"><span>Giá dự án đề xuất (chưa VAT bán ra)</span><b class="num" style="font-size:20px">${vnd(c.sell)} ₫</b></div>
-        <div class="kv" style="grid-column:span 2"><span>So với giá đối thủ thấp nhất (PKD nhập ở tab Đánh giá)</span><b class="num">${minComp?compareTxt(c.sell,minComp):'<span class="hint" style="font-size:13px;font-weight:400">Chưa có giá đối thủ</span>'}</b></div>
+        <div class="kv"><span>Quy đổi tham khảo</span><b class="num">${vnd(c.conv)} ₫</b></div>
+        <div class="kv hl" style="grid-column:span 2"><span>Giá dự án tạm tính${c.missing?` · còn ${c.missing} dòng chưa điền`:''}${q.estBy?` · ${USERS[q.estBy]?.name}, ${fmtD(q.estDate)}`:''}</span><b class="num" style="font-size:20px">${vnd(c.est)} ₫</b></div>
+        <div class="kv" style="grid-column:span 2"><span>So với giá đối thủ thấp nhất (PKD nhập ở tab Đánh giá)</span><b class="num">${minComp&&c.est?compareTxt(c.est,minComp):'<span class="hint" style="font-size:13px;font-weight:400">Chưa đủ dữ liệu</span>'}</b></div>
+        <div class="kv" style="grid-column:span 2"><span>So với giá mục tiêu của PKD</span><b class="num">${m.target&&c.est?compareTxt(c.est,m.target):'<span class="hint" style="font-size:13px;font-weight:400">Chưa đủ dữ liệu</span>'}</b></div>
       </div>
+      <div class="fl"><label>Ghi chú của XNK về giá tạm tính</label><textarea class="field" data-q="note" placeholder="VD: đã gồm cước, thuế NK 0% theo EVFTA, chưa gồm phí kiểm định…" ${ro}>${esc(q.note)}</textarea></div>
+      <div class="hint">Đây là giá tạm tính để PKD đánh giá thị trường. Giá chính thức đi theo Quy trình tính giá, báo giá và quản lý giá.</div>
     </div></section>`;
 }
-const numIn=(lab,k,val,ro)=>`<div class="fl"><label style="font-weight:500;font-size:12.5px">${lab}</label><input class="field num" type="number" data-q="${k}" value="${val}" ${ro}></div>`;
 function compareTxt(sell,ref){ const d=(sell-ref)/ref*100; const cls=d<=0?'ok':d<=8?'warn':'bad'; return `<span class="pill ${cls}" style="font-size:13px">${d<=0?'Thấp hơn':'Cao hơn'} ${Math.abs(d).toFixed(1)}%</span> <span class="hint" style="font-size:12.5px;font-weight:400">${vnd(ref)} ₫</span>`; }
 
 /* --- Evaluation --- */
@@ -781,7 +779,7 @@ function tabEval(v){
       <div class="fl"><label>CO</label><select class="field" data-x="co" ${ro}>${opt(['Chưa xác nhận','Có','Có (Form UK)','Có (EUR.1)','Không cấp được'],x.co)}</select></div>
       <div class="fl"><label>CQ</label><select class="field" data-x="cq" ${ro}>${opt(['Chưa xác nhận','Có','Không cấp được'],x.cq)}</select></div></div>
     <div class="fl"><label>Lưu ý đặc biệt (mã hóa, lưỡng dụng, ITAR…)</label><textarea class="field" data-x="special" ${ro}>${esc(x.special)}</textarea></div>
-    <div class="note">Giá dự án đang tính: <b class="num">${vnd(c.sell)} ₫</b> · <button class="btn sm ghost" data-a="tab" data-v="quote">Xem bảng tính ${ic('arrow')}</button></div>
+    <div class="note">Giá dự án tạm tính: <b class="num">${c.est?vnd(c.est)+' ₫':'chưa điền'}</b> · <button class="btn sm ghost" data-a="tab" data-v="quote">${c.est?'Xem chi tiết':'Điền giá'} ${ic('arrow')}</button></div>
   </div></section>
   <section class="panel"><div class="panel-h"><span class="dept KD">KD</span><h3>Đánh giá thị trường</h3><div class="r">${gatePill(v,'s5')}</div></div><div class="panel-b">
     <div class="fl"><label>Mức độ cần thiết với thị trường</label><div class="seg" style="align-self:flex-start">${[1,2,3,4,5].map(n=>`<button class="${m.need===n?'on':''}" data-a="need" data-v="${n}" ${ro}>${n}</button>`).join('')}</div><span class="hint">1 = không có nhu cầu · 5 = khách hàng đang hỏi</span></div>
@@ -789,7 +787,7 @@ function tabEval(v){
     <div class="fl"><label>Giá đối thủ tham chiếu</label>
       ${m.comps.map((cp,i)=>`<div style="display:flex;gap:6px"><input class="field" style="flex:1.4" data-c="${i}" data-k="name" value="${esc(cp.name)}" placeholder="Hãng / model đối thủ" ${ro}><input class="field num" style="flex:1" type="number" data-c="${i}" data-k="price" value="${cp.price||''}" placeholder="Giá (₫)" ${ro}></div>`).join('')}
       ${ro?'':`<div><button class="btn sm" data-a="addComp">${ic('plus')} Thêm đối thủ</button></div>`}</div>
-    ${m.target?`<div class="note">Giá dự án so với giá mục tiêu: ${compareTxt(c.sell,m.target)}</div>`:''}
+    ${m.target&&c.est?`<div class="note">Giá tạm tính so với giá mục tiêu: ${compareTxt(c.est,m.target)}</div>`:''}
     <div class="hint">Bảng so sánh chi tiết theo FORM SO SÁNH ĐỐI THỦ đính kèm ở tab Tài liệu, mục “So sánh đối thủ”.</div>
   </div></section></div>`;
 }
@@ -837,11 +835,12 @@ function modalCompose(){
   const v=byId(S.openId); const c=S.compose;
   return `<div class="modal"><div class="mbox"><div class="m-h">Soạn email qua Gmail</div><div class="m-b">
     <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="hint" style="align-self:center">Mẫu:</span>${Object.keys(TEMPLATES).map(k=>`<button class="btn sm ${c.tpl===k?'pri':''}" data-a="tpl" data-v="${k}">${k}</button>`).join('')}</div>
+    <div class="fl"><label>Từ</label><input class="field" value="${esc(addrOfKey(ME))}" disabled></div>
     <div class="fl"><label>Đến</label><input class="field" id="c_to" value="${esc(c.to)}"></div>
     <div class="fl"><label>CC</label><input class="field" id="c_cc" value="${esc(c.cc)}"></div>
     <div class="fl"><label>Tiêu đề</label><input class="field" id="c_sub" value="${esc(c.sub)}"></div>
     <div class="fl"><label>Nội dung</label><textarea class="field" id="c_body" style="min-height:200px">${esc(c.body)}</textarea></div>
-    <div class="hint">Email gửi từ tài khoản Google Workspace của bạn, tự gắn nhãn <span class="lbl">${esc(v.label)}</span> và lưu vào lịch sử hãng. Bản prototype chỉ mô phỏng, không gửi thật.</div>
+    <div class="hint">Email gửi từ hộp thư @aiptgroup.com của bạn, CC người phụ trách các phòng, tự gắn nhãn <span class="lbl">${esc(v.label)}</span> và lưu vào lịch sử hãng. Bản prototype chỉ mô phỏng, không gửi thật.</div>
   </div><div class="m-f"><button class="btn" data-a="closeModal">Thoát</button><button class="btn pri" data-a="sendMail">${ic('send')} Gửi</button></div></div></div>`;
 }
 
@@ -855,7 +854,7 @@ function readForm(v){
   v.contact.name=g('f_cname').value.trim(); v.schedule=g('f_sched').value;
   if(!g('f_sign').disabled){ v.signDate=g('f_sign').value; v.expireDate=g('f_exp').value; }
   v.note=g('f_note').value; v.desc=g('f_desc').value; v.project=g('f_project').value.trim(); v.priority=g('f_prio').value; v.deadline=g('f_deadline').value;
-  v.contact.title=g('f_ctitle').value.trim(); v.contact.email=g('f_cemail').value.trim(); v.contact.phone=g('f_cphone').value.trim();
+  v.contact.title=g('f_ctitle').value.trim(); v.contact.email=g('f_cemail').value.trim(); v.contact.phone=g('f_cphone').value.trim(); v.ndaFirst=g('f_nda').checked;
   ['KT','XNK','KD'].forEach(d=>v.owners[d]=[...document.querySelectorAll(`.f_owner[data-d="${d}"]:checked`)].map(i=>i.value));
   v.label='HÃNG/'+(v.name.split(' ')[0]||'').toUpperCase();
 }
@@ -911,13 +910,13 @@ document.addEventListener('click',e=>{
       const now=new Date(); S.synced[v.id]=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
       if(v.contact.email && !v._synced){ v._synced=true; v.emails.push({id:uid(),subject:`RE: ${v.emails[0]?.subject||'Follow-up'}`,unread:true,msgs:[mail(v.contact.email,v.contact.name||v.contact.email,iso(TODAY),'Hi,\nJust following up on our previous email. Let us know if you need any further information.\nBest regards',[])]}); addLog(v,'Đồng bộ Gmail: 1 email mới'); render(); toast('Có 1 email mới từ hãng'); }
       else { render(); toast('Không có email mới'); } },900); break; }
-    case 'compose': S.compose={tpl:'',to:v.contact.email,cc:[...v.owners.XNK,...v.owners.KD].map(k=>k.toLowerCase()+'@aipt.vn').join(', '),sub:'',body:''}; S.modal=modalCompose; renderLayer(); break;
+    case 'compose': S.compose={tpl:'',to:v.contact.email,cc:[...new Set([...v.owners.KT,...v.owners.XNK,...v.owners.KD])].filter(k=>k!==ME).map(addrOfKey).join(', '),sub:'',body:''}; S.modal=modalCompose; renderLayer(); break;
     case 'tpl': { const [sub,body]=TEMPLATES[el.dataset.v](v); Object.assign(S.compose,{tpl:el.dataset.v,to:document.getElementById('c_to').value,cc:document.getElementById('c_cc').value,sub,body}); renderLayer(); break; }
     case 'sendMail': { const sub=document.getElementById('c_sub').value.trim(), body=document.getElementById('c_body').value, to=document.getElementById('c_to').value.trim();
       if(!to||!sub){ toast('Nhập người nhận và tiêu đề'); return; }
       v.emails.push({id:uid(),subject:sub,unread:false,msgs:[mail('me',USERS[ME].name,iso(TODAY),body)]}); addLog(v,`Gửi email: ${sub}`); S.modal=null; render(); toast('Đã thêm vào lịch sử (mô phỏng gửi)'); break; }
     case 'delFile': { const f=v.files.find(f=>f.id===el.dataset.id); v.files=v.files.filter(x=>x!==f); addLog(v,`Xóa tài liệu ${f.name}`); render(); break; }
-    case 'addLine': v.quote.lines.push({model:'',desc:'',qty:1,price:0}); render(); break;
+    case 'addLine': v.quote.lines.push({model:'',desc:'',qty:1,price:0,est:0}); render(); break;
     case 'delLine': v.quote.lines.splice(+el.dataset.i,1); render(); break;
     case 'addComp': v.market.comps.push({name:'',price:0}); render(); break;
     case 'need': v.market.need=+el.dataset.v; render(); break;
@@ -928,8 +927,8 @@ document.addEventListener('change',e=>{
   if(t.id==='mine'){ S.mine=t.checked; render(); return; }
   if(t.id==='upFile' && v){ addFiles(v,t.files,document.getElementById('upCat').value); return; }
   if(!v) return;
-  if(t.dataset.q){ v.quote[t.dataset.q]= ['currency','incoterm'].includes(t.dataset.q)?t.value:+t.value; render(); }
-  else if(t.dataset.l!=null){ const l=v.quote.lines[+t.dataset.l]; l[t.dataset.k]=['qty','price'].includes(t.dataset.k)?+t.value:t.value; render(); }
+  if(t.dataset.q){ v.quote[t.dataset.q]= ['currency','incoterm','note'].includes(t.dataset.q)?t.value:+t.value; render(); }
+  else if(t.dataset.l!=null){ const l=v.quote.lines[+t.dataset.l]; l[t.dataset.k]=['qty','price','est'].includes(t.dataset.k)?+t.value:t.value; if(t.dataset.k==='est'){ v.quote.estBy=ME; v.quote.estDate=iso(TODAY); } render(); }
   else if(t.dataset.x){ v.xnk[t.dataset.x]=t.value; }
   else if(t.dataset.m){ v.market[t.dataset.m]=+t.value; render(); }
   else if(t.dataset.c!=null){ const c=v.market.comps[+t.dataset.c]; c[t.dataset.k]=t.dataset.k==='price'?+t.value:t.value; render(); }
