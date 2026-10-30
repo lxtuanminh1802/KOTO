@@ -1,0 +1,19 @@
+# Nguồn crawl. Form "Thêm nguồn" trên web ghi vào đây (hoặc vào bảng nguồn trong DB khi tích hợp).
+defaults:
+  delay: 1.5            # giây giữa 2 request tới cùng một host
+  respect_robots: true
+  crawl_website: true   # vào website hãng lấy giới thiệu tổng quan
+  render: auto          # auto: thử tải tĩnh, ít link thì mở bằng trình duyệt
+
+sources:
+  - id: international-cyber-expo
+    name: International Cyber Expo
+    url: https://www.internationalcyberexpo.com/exhibitors-list
+    place: London, Anh
+    schedule: weekly
+    default_mang: A05
+    # Nếu tự dò link sai, chạy "probe" rồi khai báo selector, ví dụ:
+    # link_selector: "a[href*='/exhibitor']"
+    # fields:
+    #   booth: ".stand-number"
+    #   description: ".exhibitor-description"

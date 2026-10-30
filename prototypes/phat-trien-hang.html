@@ -396,6 +396,7 @@ const opt = (list,val) => list.map(o=>`<option ${o===val?'selected':''}>${esc(o)
 
 /* ======================= Nguồn crawl ======================= */
 const SOURCES = [
+  {id:'ice', name:'International Cyber Expo', place:'London, Anh', when:'', url:'https://www.internationalcyberexpo.com/exhibitors-list', last:ago(2), sched:'Hằng tuần', on:true},
   {id:'essen', name:'Security Essen 2026', place:'Essen, Đức', when:'09/2026', url:'https://www.security-essen.de', last:ago(30), sched:'Hằng tuần', on:true},
   {id:'eurosatory', name:'Eurosatory 2026', place:'Paris, Pháp', when:'06/2026', url:'https://www.eurosatory.com', last:ago(110), sched:'Đã xong', on:false},
   {id:'milipol', name:'Milipol Paris 2025', place:'Paris, Pháp', when:'11/2025', url:'https://www.milipol.com', last:ago(320), sched:'Đã xong', on:false},
@@ -406,7 +407,12 @@ const SOURCES = [
 const srcName = id => SOURCES.find(s=>s.id===id)?.name || '';
 function P(o){ return Object.assign({id:uid(), status:'new', categories:[], email:'', booth:''}, o); }
 let potentials = [
-  P({name:'Brightfield Imaging Ltd', website:'www.brightfield-imaging.co.uk', country:'Anh', mang:'Thiết bị an ninh', src:'essen', booth:'Hall 6, B21', added:ago(30), desc:'Camera ANPR và hệ thống nhận dạng biển số tốc độ cao cho giao thông và an ninh.', categories:['ANPR','Video surveillance'], email:'sales@brightfield-imaging.co.uk'}),
+  P({name:'Halvard Secure Ltd', website:'www.halvardsecure.co.uk', country:'Anh', mang:'A05', src:'ice', booth:'Stand C12', added:ago(2), desc:'Managed SOC, threat intelligence và incident response cho chính phủ và hạ tầng trọng yếu.', categories:['Threat Intelligence','Managed SOC'], email:'sales@halvardsecure.co.uk',
+    overview:{summary:'Halvard builds managed SOC and threat intelligence services.', text:'Halvard Secure được thành lập năm 2009 tại Manchester, vận hành trung tâm SOC 24/7 cho khách hàng chính phủ và hạ tầng trọng yếu. Nền tảng threat intelligence triển khai on-premise, hỗ trợ mạng cách ly (air-gapped), phù hợp khách hàng quốc phòng và khu vực công.', about:'https://www.halvardsecure.co.uk/about-us/'}}),
+  P({name:'Nordlight Crypto AB', website:'www.nordlightcrypto.se', country:'Thụy Điển', mang:'A05', src:'ice', booth:'Stand B07', added:ago(2), desc:'Module mã hóa phần cứng và gateway liên lạc bảo mật cho mạng mật.', categories:['Encryption','Secure communications'],
+    overview:{summary:'Hardware encryption for secure communication.', text:'Nordlight Crypto AB thiết kế module mã hóa phần cứng và gateway liên lạc bảo mật, được chứng nhận cho mạng phân loại mật tại các nước Bắc Âu.', about:'https://www.nordlightcrypto.se/company/'}}),
+  P({name:'Brightfield Imaging Ltd', website:'www.brightfield-imaging.co.uk', country:'Anh', mang:'Thiết bị an ninh', src:'essen', booth:'Hall 6, B21', added:ago(30), desc:'Camera ANPR và hệ thống nhận dạng biển số tốc độ cao cho giao thông và an ninh.', categories:['ANPR','Video surveillance'], email:'sales@brightfield-imaging.co.uk',
+    overview:{summary:'ANPR cameras and analytics for traffic and security.', text:'Brightfield Imaging phát triển camera ANPR và phần mềm nhận dạng biển số chạy tại biên, xử lý tới 250 km/h. Sản phẩm dùng cho cảnh sát giao thông, trạm thu phí và kiểm soát ra vào khu vực an ninh.', about:'https://www.brightfield-imaging.co.uk/about/'}}),
   P({name:'Lumenta Forensic GmbH', website:'www.lumenta-forensic.de', country:'Đức', mang:'A05', src:'essen', booth:'Hall 3, E102', added:ago(30), desc:'Nguồn sáng giám định, thiết bị phát hiện dấu vết sinh học tại hiện trường.', categories:['Forensics','Crime scene'], email:'info@lumenta-forensic.de'}),
   P({name:'Nordvik Thermal AB', website:'www.nordvik-thermal.se', country:'Thụy Điển', mang:'Thiết bị an ninh', src:'essen', booth:'Hall 7, C40', added:ago(30), desc:'Camera ảnh nhiệt tầm xa.', categories:['Thermal imaging'], status:'seen'}),
   P({name:'Okura Defense Optics', website:'www.okura-optics.jp', country:'Nhật Bản', mang:'A06', src:'eurosatory', booth:'Hall 5A, D340', added:ago(110), desc:'Ống kính zoom tầm xa và hệ quan sát ngày/đêm cho giám sát biên giới.', categories:['Optics','Border surveillance'], status:'seen'}),
@@ -605,8 +611,8 @@ function renderPot(){
     <div class="seg">${[['open','Chưa xử lý'],['moved','Đã chuyển'],['skip','Bỏ qua']].map(([k,l])=>`<button class="${S.pstat===k?'on':''}" data-a="pstat" data-v="${k}">${l} <span class="num" style="opacity:.7">${cnt(k)}</span></button>`).join('')}</div>
   </div>
   <details class="panel">
-    <summary class="panel-h"><svg class="ico chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg><h3>Nguồn crawl triển lãm</h3><span class="hint">${SOURCES.filter(s=>s.on).length} nguồn đang chạy định kỳ · crawler đẩy dữ liệu qua API, tự loại trùng theo domain website</span><div class="r"><span class="btn sm" data-a="toast" data-t="Thêm URL danh sách exhibitor của triển lãm mới (mô phỏng)">${ic('plus')} Thêm nguồn</span></div></summary>
-    <div class="panel-b"><div class="src-grid">${SOURCES.map(s=>{const n=potentials.filter(p=>p.src===s.id).length;return `<div class="src"><b>${s.name}</b><span class="m">${s.place} · ${s.when}</span><span class="m"><span class="live ${s.on?'':'off'}"></span>${s.sched} · lần cuối ${fmtD(s.last)}</span><div class="r"><span class="pill num">${n} hãng</span><button class="btn sm ghost x" data-a="psrcSet" data-v="${s.id}">Xem ${ic('arrow')}</button></div></div>`;}).join('')}</div></div>
+    <summary class="panel-h"><svg class="ico chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg><h3>Nguồn crawl triển lãm</h3><span class="hint">${SOURCES.filter(s=>s.on).length} nguồn đang chạy định kỳ · crawler đẩy dữ liệu qua API, tự loại trùng theo domain website</span><div class="r"><span class="btn sm" data-a="newSrc" role="button">${ic('plus')} Thêm nguồn</span></div></summary>
+    <div class="panel-b"><div class="src-grid">${SOURCES.map(s=>{const n=potentials.filter(p=>p.src===s.id).length;return `<div class="src"><b>${esc(s.name)}</b><span class="m">${esc(s.place)}${s.when?' · '+esc(s.when):''}</span><span class="m"><span class="live ${s.on?'':'off'}"></span>${esc(s.sched)} · ${s.last?'lần cuối '+fmtD(s.last):'chưa chạy'}</span><div class="r"><span class="pill num">${n} hãng</span><button class="btn sm ghost x" data-a="psrcSet" data-v="${s.id}">Xem ${ic('arrow')}</button></div></div>`;}).join('')}</div></div>
   </details>
   ${selN?`<div class="bulk"><b>${selN} hãng đã chọn</b><span class="sp" style="flex:1"></span><button class="btn sm" data-a="moveSel">${ic('arrow')} Chuyển sang Hãng phát triển</button><button class="btn sm" data-a="skipSel">Bỏ qua</button><button class="btn sm ghost" style="color:inherit" data-a="clearSel">Bỏ chọn</button></div>`:''}
   <div class="tbl-wrap"><table><thead><tr><th style="width:36px"><input type="checkbox" class="cb" id="selAll" ${allSel?'checked':''} aria-label="Chọn tất cả"></th><th>Tên hãng</th><th>Quốc gia</th><th>Mảng SP <span class="hint" style="font-weight:400">(gợi ý)</span></th><th>Sản phẩm chính</th><th>Nguồn</th><th>Ngày thêm</th><th>Trạng thái</th><th class="c">Thao tác</th></tr></thead><tbody>
@@ -717,7 +723,10 @@ function renderPotDrawer(p){
     </div></div>
     <div class="d-body">
       ${dup?`<div class="note warn">Trùng domain với hồ sơ ${dup.label.toLowerCase()}. ${dup.id?`<button class="btn sm" data-a="open" data-id="${dup.id}">Mở hồ sơ</button>`:''}</div>`:''}
-      <section class="panel"><div class="panel-h"><h3>Thông tin thu thập</h3><span class="hint">${p.src==='manual'?'Thêm thủ công bởi '+(USERS[p.addedBy]?.name||''):'Crawl từ '+esc(srcName(p.src))}</span></div><div class="panel-b" style="gap:9px">
+      <section class="panel"><div class="panel-h"><h3>Giới thiệu tổng quan</h3><span class="hint">từ website hãng</span></div><div class="panel-b" style="gap:8px">
+        ${p.overview?`${p.overview.summary?`<div style="font-weight:500">${esc(p.overview.summary)}</div>`:''}<div style="white-space:pre-line">${esc(p.overview.text)}</div>${p.overview.about?`<div class="hint">Nguồn: <a href="${esc(p.overview.about)}" target="_blank" rel="noopener">${esc(p.overview.about)}</a></div>`:''}`:`<div class="hint">${p.src==='manual'?'Hãng thêm thủ công, chưa crawl website.':'Chưa lấy được giới thiệu từ website hãng (website không có hoặc chặn crawler).'}</div>`}
+      </div></section>
+      <section class="panel"><div class="panel-h"><h3>Thông tin trên trang triển lãm</h3><span class="hint">${p.src==='manual'?'Thêm thủ công bởi '+(USERS[p.addedBy]?.name||''):'Crawl từ '+esc(srcName(p.src))}</span></div><div class="panel-b" style="gap:9px">
         <div>${esc(p.desc)}</div>
         <div class="subchips">${p.categories.map(c=>`<span class="sc">${esc(c)}</span>`).join('')}</div>
         <div class="kvr"><span class="hint">Website</span><span><a href="https://${esc(domainOf(p.website))}" target="_blank" rel="noopener">${esc(domainOf(p.website))}</a></span></div>
@@ -919,6 +928,36 @@ function modalNewPot(){
     <div class="fl"><label>Mô tả / sản phẩm chính</label><textarea class="field" id="p_desc" placeholder="Nguồn biết đến hãng, sản phẩm quan tâm…"></textarea></div>
   </div><div class="m-f"><button class="btn" data-a="closeModal">Thoát</button><button class="btn pri" data-a="createPot">Lưu</button></div></div></div>`;
 }
+function modalSource(){
+  return `<div class="modal"><div class="mbox"><div class="m-h">Thêm nguồn crawl</div><div class="m-b">
+    <div class="note">Dán URL trang danh sách exhibitor của triển lãm. Crawler tự dò link từng hãng, mở trang chi tiết, rồi vào website hãng để lấy giới thiệu tổng quan.</div>
+    <div id="srcErr"></div>
+    <div class="form">
+      <div class="fl"><label><span class="star">*</span>Tên triển lãm</label><input class="field" id="s_name" placeholder="VD: International Cyber Expo 2026"></div>
+      <div class="fl"><label><span class="star">*</span>URL danh sách exhibitor</label><input class="field" id="s_url" placeholder="https://www.internationalcyberexpo.com/exhibitors-list"></div>
+      <div class="fl"><label>Địa điểm</label><input class="field" id="s_place" placeholder="VD: London, Anh"></div>
+      <div class="fl"><label>Thời gian diễn ra</label><input type="month" class="field" id="s_when"></div>
+      <div class="fl"><label>Lịch crawl</label><select class="field" id="s_sched"><option>Hằng tuần</option><option>Hằng ngày</option><option>Chạy 1 lần</option></select></div>
+      <div class="fl"><label>Mảng mặc định <span class="hint" style="font-weight:400">(khi không tự đoán được)</span></label><select class="field" id="s_mang"><option value="">Tự phân loại</option>${opt(MANGS,'')}</select></div>
+      <div class="fl full"><label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" class="cb" id="s_site" checked> Vào website từng hãng để lấy giới thiệu tổng quan (trang chủ và trang About)</label></div>
+    </div>
+    <details><summary class="hint" style="cursor:pointer">Tùy chọn nâng cao (khi tự dò không đúng)</summary>
+      <div class="form" style="margin-top:12px">
+        <div class="fl"><label>Cách tải trang</label><select class="field" id="s_render"><option value="auto">Tự động</option><option value="always">Luôn mở bằng trình duyệt (trang dùng JavaScript)</option><option value="never">Chỉ tải HTML tĩnh</option></select></div>
+        <div class="fl"><label>CSS selector link hãng</label><input class="field" id="s_link" placeholder="VD: a[href*='/exhibitor/']"></div>
+        <div class="fl"><label>CSS selector gian hàng</label><input class="field" id="s_booth" placeholder="VD: .stand-number"></div>
+        <div class="fl"><label>CSS selector mô tả</label><input class="field" id="s_desc" placeholder="VD: .exhibitor-description"></div>
+      </div></details>
+    <div id="srcProbe"></div>
+  </div><div class="m-f"><button class="btn" data-a="probeSrc">Kiểm tra URL</button><button class="btn" data-a="closeModal">Thoát</button><button class="btn pri" data-a="saveSrc">Lưu nguồn</button></div></div></div>`;
+}
+function readSrcForm(){
+  const g=id=>document.getElementById(id); const name=g('s_name').value.trim(), url=g('s_url').value.trim();
+  let ok=false; try{ const u=new URL(url); ok=/^https?:$/.test(u.protocol); }catch(e){}
+  if(!name||!ok){ g('srcErr').innerHTML='<div class="note bad">Nhập tên triển lãm và URL đầy đủ, bắt đầu bằng https://</div>'; return null; }
+  g('srcErr').innerHTML='';
+  const when=g('s_when').value; return {name,url,place:g('s_place').value.trim(),when:when?when.split('-').reverse().join('/'):'',sched:g('s_sched').value,mang:g('s_mang').value,site:g('s_site').checked,render:g('s_render').value,link:g('s_link').value.trim()};
+}
 function modalMove(){
   const ids=S.moveIds; const one=ids.length===1?potById(ids[0]):null;
   return `<div class="modal"><div class="mbox sm"><div class="m-h">Chuyển sang Hãng phát triển</div><div class="m-b">
@@ -1000,7 +1039,7 @@ function bindDrop(){
 function movePotentials(ids, kt, xnk, proj, prio){
   const made=[];
   ids.forEach(id=>{ const p=potById(id); if(!p||dupOf(p)) return;
-    const v=V({name:p.name, website:p.website, country:p.country, mang:p.mang, stage:'contact', created:iso(TODAY), deadline:ahead(30), priority:prio, project:proj, desc:p.desc,
+    const v=V({name:p.name, website:p.website, country:p.country, mang:p.mang, stage:'contact', created:iso(TODAY), deadline:ahead(30), priority:prio, project:proj, desc:p.overview?.text||p.desc,
       origin:p.src==='manual'?null:{src:p.src, booth:p.booth}, contact:{name:'',title:'',email:p.email||'',phone:''}, owners:{KT:[kt],XNK:xnk?[xnk]:[],KD:[]},
       log:[{d:iso(TODAY),who:ME,t:`Chuyển từ Danh sách tiềm năng${p.src==='manual'?'':' ('+srcName(p.src)+')'}`}]});
     vendors.unshift(v); p.status='moved'; p.movedTo=v.id; made.push(v); S.sel.delete(id);
@@ -1011,7 +1050,7 @@ function crit(v,id){ return v.crit[id]; }
 
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-a]'); if(!el) return;
-  if(el.tagName==='SUMMARY'||el.closest('summary')&&el.dataset.a==='toast') e.preventDefault();
+  if(el.closest('summary')) e.preventDefault();
   const a=el.dataset.a; const v=S.openId?byId(S.openId):null;
   switch(a){
     case 'view': S.view=el.dataset.v; S.openId=null; S.openPot=null; render(); break;
@@ -1028,6 +1067,13 @@ document.addEventListener('click',e=>{
         const add=CRAWL_QUEUE.splice(0); add.forEach(p=>{p.added=iso(TODAY); potentials.unshift(p);});
         S.pstat='open'; S.psrc='all'; render(); toast(add.length?`Crawl xong: ${add.length} hãng mới từ ${src.name}, 0 trùng`:'Crawl xong: không có hãng mới'); },1100); break; }
     case 'newPot': S.modal=modalNewPot; renderLayer(); break;
+    case 'newSrc': S.modal=modalSource; renderLayer(); break;
+    case 'probeSrc': { const f=readSrcForm(); if(!f) return; const cmd=`python -m expo_crawler probe --url ${f.url}${f.link?` --link-selector "${f.link}"`:''}`;
+      document.getElementById('srcProbe').innerHTML=`<div class="note">Trên hệ thống thật, nút này gọi crawler ở chế độ kiểm tra: tải trang, báo số link hãng dò được, và bóc tách thử hãng đầu tiên kèm giới thiệu từ website. Bản prototype không gọi mạng. Lệnh tương đương:<br><code style="font-size:12px;word-break:break-all">${esc(cmd)}</code></div>`; break; }
+    case 'saveSrc': { const f=readSrcForm(); if(!f) return; const id=f.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||uid();
+      if(SOURCES.some(x=>x.url===f.url)){ document.getElementById('srcErr').innerHTML='<div class="note bad">URL này đã có trong danh sách nguồn.</div>'; return; }
+      SOURCES.unshift({id, name:f.name, place:f.place, when:f.when, url:f.url, last:'', sched:f.sched, on:f.sched!=='Chạy 1 lần'});
+      S.modal=null; render(); toast(`Đã thêm nguồn ${f.name}. Crawler chạy lần đầu trong lần quét kế tiếp.`); break; }
     case 'createPot': { const g=id=>document.getElementById(id).value.trim(); const name=g('p_name'), web=g('p_web');
       if(!name||!web){ document.getElementById('potErr').innerHTML='<div class="note bad">Nhập tên hãng và website. Website dùng để kiểm tra trùng.</div>'; return; }
       const p=P({name, website:web, country:g('p_country'), mang:g('p_mang'), desc:g('p_desc'), src:'manual', addedBy:ME, added:iso(TODAY), status:'seen'});
