@@ -6,7 +6,7 @@ Ba phần mềm độc lập, mỗi phần mềm một tệp HTML tự chứa (m
 - `VideoMasterAI_Analyse.html`: phân tích nhận diện, tìm đối tượng, vùng, theo dõi, bản đồ, trợ lý AI.
 - `VideoMasterAI_Enhance.html`: nâng cao chất lượng, tab Xử lý ảnh và tab Xử lý video riêng.
 
-Đăng nhập: tài khoản `admin`, mật khẩu `aipt2026`, mã OTP nhập 6 số bất kỳ.
+Đăng nhập: tài khoản `admin`, mật khẩu `aipt2026` (không có bước OTP). Khóa phiên: menu tài khoản > Khóa phiên, mở lại bằng PIN 6 số bất kỳ.
 
 Mỗi phần mềm có đăng nhập, vụ án, chứng cứ, nhật ký và cài đặt riêng (lưu trong trình duyệt), không liên thông với nhau.
 Ảnh bản đồ nền của Analyse cần mạng; khi không có mạng, tab Bản đồ dùng sơ đồ minh họa.
