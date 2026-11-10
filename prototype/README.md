@@ -15,4 +15,4 @@ Biểu mẫu báo cáo (A4, mẫu tham khảo), thư mục `bieu-mau/`. Mở b�
 
 - `VideoMasterAI_Extract_BienBanTrichXuat.html`: biên bản trích xuất dữ liệu video của Extract.
 - `VideoMasterAI_Enhance_BaoCaoXuLy.html`: báo cáo xử lý nâng cao chất lượng hình ảnh, video của Enhance.
-- `*_DuLieuMau.html`: hai biểu mẫu trên đã điền dữ liệu mẫu, lấy từ việc chạy chính các prototype (mã chứng cứ, mã băm, nhật ký thao tác, chuỗi xử lý). Tên người chứng kiến, số sê-ri thiết bị chống ghi, số niêm phong là giả định.
+- `*_DuLieuMau.html`: hai biểu mẫu trên đã điền dữ liệu mẫu, lấy từ việc chạy chính các prototype (mã chứng cứ, mã băm, nhật ký thao tác, chuỗi xử lý). Chữ xanh là phần mềm tự điền, chữ đỏ là phần người dùng tự điền sau khi xuất (trong bản mẫu là giá trị giả định).
