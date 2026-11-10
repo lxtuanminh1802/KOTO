@@ -1,0 +1,80 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Báo cáo xử lý nâng cao chất lượng</title><style>
+@page { size: A4; margin: 18mm 18mm 20mm 25mm; }
+* { box-sizing: border-box; }
+body { font-family: 'Liberation Serif', 'Times New Roman', serif; font-size: 12.5pt; line-height: 1.45; color: #000; margin: 0; padding-right: 1.5mm; }
+.hdr { display: grid; grid-template-columns: 1fr 1.25fr; text-align: center; font-size: 12pt; margin-bottom: 4mm; }
+.hdr b { display: block; }
+.hdr .rule { width: 34%; margin: 1mm auto 0; border-top: 1px solid #000; }
+.hdr .rule2 { width: 52%; margin: 1mm auto 0; border-top: 1px solid #000; }
+.hdr .no { margin-top: 2mm; }
+.date { text-align: right; font-style: italic; margin: 1mm 0 5mm; }
+h1 { text-align: center; font-size: 15pt; margin: 0 0 4mm; letter-spacing: .2px; }
+.sub { text-align: center; font-style: italic; margin: 1mm 0 5mm; }
+h2 { font-size: 12.5pt; margin: 5mm 0 2mm; text-transform: uppercase; break-after: avoid; }
+p { margin: 1.2mm 0; text-align: justify; }
+.f { display: flex; min-width: 0; align-items: flex-end; gap: 2mm; margin: 1.6mm 0; break-inside: avoid; }
+.f > span { white-space: nowrap; }
+.f > i { flex: 1 1 18mm; min-width: 18mm; border-bottom: 1px dotted #000; min-height: 5.5mm; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 8mm; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; column-gap: 6mm; }
+.cb { display: inline-flex; align-items: center; gap: 1.6mm; margin-right: 6mm; white-space: nowrap; }
+.cb::before { content: ''; width: 3.4mm; height: 3.4mm; border: 1px solid #000; display: inline-block; }
+.opts { margin: 1.4mm 0; line-height: 1.8; }
+table { width: 100%; table-layout: fixed; border-collapse: collapse; margin: 2mm 0 1mm; font-size: 11pt; break-inside: auto; }
+th, td { border: 1px solid #000; padding: 1.2mm 1.6mm; vertical-align: top; }
+th { font-weight: bold; text-align: center; background: #efefef; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+td { height: 8.5mm; word-wrap: break-word; }
+tr { break-inside: avoid; }
+.note { font-size: 10.5pt; font-style: italic; margin: 1mm 0 2mm; }
+.mono { font-family: 'Liberation Mono', monospace; font-size: 10pt; }
+.box { border: 1px solid #000; height: 58mm; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 1.5mm; font-size: 10.5pt; font-style: italic; }
+.imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; margin: 2mm 0; break-inside: avoid; }
+.sign { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin-top: 8mm; break-inside: avoid; }
+.sign.two { grid-template-columns: 1fr 1fr; }
+.sign b { display: block; }
+.sign i { display: block; font-size: 11pt; }
+.sign .sp { height: 26mm; }
+.warn { border: 1.2px solid #000; padding: 2mm 3mm; margin: 2mm 0; font-size: 11.5pt; break-inside: avoid; }
+.pb { break-before: page; }
+.keep { break-inside: avoid; }
+.cb.tight { margin-right: 0; font-weight: bold; }
+.lines i { display: block; border-bottom: 1px dotted #000; height: 7mm; }
+.guide { font-size: 10.5pt; }
+.guide li { margin: .8mm 0; }
+</style></head><body><div class="hdr"><div><span>CƠ QUAN CHỦ QUẢN ..................</span><b>ĐƠN VỊ THỰC HIỆN</b><div class="rule"></div><div class="no">Số: ......../BC-XL</div></div>
+<div><b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><b>Độc lập - Tự do - Hạnh phúc</b><div class="rule2"></div></div></div>
+<div class="date">............, ngày ...... tháng ...... năm 20......</div>
+<h1>BÁO CÁO XỬ LÝ NÂNG CAO CHẤT LƯỢNG<br>HÌNH ẢNH, VIDEO</h1>
+<h2>I. Thông tin chung</h2>
+<div class="row2"><div class="f"><span>Mã vụ án:</span><i></i></div><div class="f"><span>Số báo cáo:</span><i></i></div></div>
+<div class="f"><span>Tên vụ án:</span><i></i></div>
+<div class="row2"><div class="f"><span>Người thực hiện:</span><i></i></div><div class="f"><span>Chức vụ, đơn vị:</span><i></i></div></div>
+<div class="f"><span>Phần mềm: Video Master Enhance</span></div>
+<div class="f"><span>Mục đích xử lý:</span><i></i></div>
+<div class="opts"><span class="cb">Làm rõ biển số</span><span class="cb">Làm rõ khuôn mặt, đặc điểm người</span><span class="cb">Làm rõ hành vi, diễn biến</span><span class="cb">Minh họa trong hồ sơ</span><span class="cb">Khác</span></div>
+<h2>II. Dữ liệu đầu vào</h2>
+<div class="opts">Loại xử lý:&nbsp; <span class="cb">Xử lý ảnh (ảnh tải lên)</span><span class="cb">Xử lý ảnh (khung chụp từ video, mã &lt;EV&gt;-F&lt;n&gt;)</span><span class="cb">Xử lý video</span></div>
+<table><colgroup><col style="width:11%"><col style="width:17%"><col style="width:22%"><col style="width:17%"><col style="width:11%"><col style="width:22%"></colgroup><tr><th>Mã EV (trong Enhance)</th><th>Tên tệp gốc</th><th>Nguồn tệp (tải lên / xuất từ Extract, Analyse; mã ở phần mềm nguồn)</th><th>Khung hoặc đoạn xử lý (thời điểm, In → Out)</th><th>Độ phân giải</th><th>SHA-256 tệp gốc</th></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr></table>
+<div class="opts">Kiểm tra SHA-256 tệp gốc trước khi xử lý:&nbsp; <span class="cb">Khớp mã băm lúc tiếp nhận</span><span class="cb">Không khớp (dừng xử lý)</span></div>
+<div class="f"><span>SHA-256 khung hình đầu vào (với xử lý ảnh):</span><i></i></div>
+<h2>III. Chuỗi xử lý</h2>
+<div class="row2"><div class="f"><span>Mã chuỗi:</span><i></i></div><div class="f"><span>Mẫu áp dụng (nếu có):</span><i></i></div></div>
+<table><colgroup><col style="width:6%"><col style="width:19%"><col style="width:10%"><col style="width:24%"><col style="width:15%"><col style="width:16%"><col style="width:10%"></colgroup><tr><th>Bước</th><th>Công cụ / bộ lọc</th><th>Loại (AI / bộ lọc)</th><th>Tham số</th><th>Vùng áp dụng (nếu chọn vùng)</th><th>Mô hình, phiên bản</th><th>Seed</th></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></table>
+<p class="note">Thứ tự bước như thực hiện; bước đã tắt không ghi. Công cụ AI không tất định phải cố định seed để tái lập kết quả. Công cụ chọn vùng (siêu phân giải vùng, phục hồi khuôn mặt, sửa phối cảnh 4 điểm) chỉ dùng cho ảnh.</p>
+<h2>IV. Kết quả</h2>
+<div class="imgs"><div class="box">Ảnh gốc (khung đầu vào)</div><div class="box">Ảnh cuối cùng (sau toàn bộ chuỗi xử lý)</div></div>
+<table><colgroup><col style="width:15%"><col style="width:27%"><col style="width:17%"><col style="width:15%"><col style="width:26%"></colgroup><tr><th>Mã phái sinh</th><th>Tên tệp đầu ra</th><th>Loại (ảnh PNG / video MP4)</th><th>Độ phân giải, thời lượng</th><th>SHA-256 tệp đầu ra</th></tr><tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr></table>
+<div class="row2"><div class="f"><span>Số vùng làm mờ mặt, biển số:</span><i></i></div><div class="opts">Dải chú thích khi xuất:&nbsp; <span class="cb">Có</span><span class="cb">Không</span></div></div>
+<div class="opts">Kiểm tra tái lập (chạy lại cùng chuỗi trên cùng đầu vào):&nbsp; <span class="cb">Mã băm đầu ra trùng nhau</span><span class="cb">Không trùng (ghi lý do)</span></div>
+<div class="f"><span>Nhận xét kết quả:</span><i></i></div><div class="lines"><i></i><i></i></div>
+<div class="keep"><h2>V. Kết luận</h2>
+<div class="lines"><i></i><i></i><i></i></div>
+<div class="sign two"><div><b>NGƯỜI THỰC HIỆN</b><i>(Ký, ghi rõ họ tên)</i><div class="sp"></div></div><div><b>THỦ TRƯỞNG ĐƠN VỊ</b><i>(Ký, đóng dấu)</i><div class="sp"></div></div></div></div>
+<h2 class="pb">Phụ lục. Nhật ký thao tác liên quan</h2>
+<table><colgroup><col style="width:6%"><col style="width:15%"><col style="width:15%"><col style="width:20%"><col style="width:28%"><col style="width:16%"></colgroup><tr><th>STT</th><th>Thời điểm</th><th>Người thực hiện</th><th>Thao tác</th><th>Đối tượng, mã chuỗi</th><th>Mã băm dòng</th></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr></table>
+<div class="guide"><b>Hướng dẫn điền</b><ol>
+<li>Phần mềm tự điền mục II, III, IV và phụ lục từ báo cáo xử lý (JSON) sinh ra khi lưu bản phái sinh hoặc xuất ảnh (UR-ENH-04); mục I và V điền tay.</li>
+<li>Mỗi tệp đầu ra cần có một báo cáo; với video, ghi đoạn In → Out và số khung đã xử lý.</li>
+<li>Mã EV, mã phái sinh &lt;EV&gt;-E&lt;n&gt; và khung &lt;EV&gt;-F&lt;n&gt; do Enhance cấp trong cơ sở dữ liệu của Enhance.</li>
+<li>Đây là mẫu tham khảo của Video Master AI; đơn vị đối chiếu với biểu mẫu nghiệp vụ hiện hành (câu hỏi mở Q12).</li></ol></div>
+</body></html>
