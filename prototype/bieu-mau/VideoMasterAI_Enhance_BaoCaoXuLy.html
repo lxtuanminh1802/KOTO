@@ -8,7 +8,7 @@ body { font-family: 'Liberation Serif', 'Times New Roman', serif; font-size: 12.
 .hdr .rule2 { width: 52%; margin: 1mm auto 0; border-top: 1px solid #000; }
 .hdr .no { margin-top: 2mm; }
 .date { text-align: right; font-style: italic; margin: 1mm 0 5mm; }
-h1 { text-align: center; font-size: 15pt; margin: 0; letter-spacing: .2px; }
+h1 { text-align: center; font-size: 15pt; margin: 0 0 4mm; letter-spacing: .2px; }
 .sub { text-align: center; font-style: italic; margin: 1mm 0 5mm; }
 h2 { font-size: 12.5pt; margin: 5mm 0 2mm; text-transform: uppercase; break-after: avoid; }
 p { margin: 1.2mm 0; text-align: justify; }
@@ -45,7 +45,6 @@ tr { break-inside: avoid; }
 <div><b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><b>Độc lập - Tự do - Hạnh phúc</b><div class="rule2"></div></div></div>
 <div class="date">............, ngày ...... tháng ...... năm 20......</div>
 <h1>BÁO CÁO XỬ LÝ NÂNG CAO CHẤT LƯỢNG<br>HÌNH ẢNH, VIDEO</h1>
-<div class="sub">(Lập bằng phần mềm Video Master Enhance; kèm báo cáo xử lý dạng JSON và tệp đầu ra)</div>
 <h2>I. Thông tin chung</h2>
 <div class="row2"><div class="f"><span>Mã vụ án:</span><i></i></div><div class="f"><span>Số báo cáo:</span><i></i></div></div>
 <div class="f"><span>Tên vụ án:</span><i></i></div>
@@ -68,17 +67,13 @@ tr { break-inside: avoid; }
 <div class="row2"><div class="f"><span>Số vùng làm mờ mặt, biển số:</span><i></i></div><div class="opts">Dải chú thích khi xuất:&nbsp; <span class="cb">Có</span><span class="cb">Không</span></div></div>
 <div class="opts">Kiểm tra tái lập (chạy lại cùng chuỗi trên cùng đầu vào):&nbsp; <span class="cb">Mã băm đầu ra trùng nhau</span><span class="cb">Không trùng (ghi lý do)</span></div>
 <div class="f"><span>Nhận xét kết quả:</span><i></i></div><div class="lines"><i></i><i></i></div>
-<h2>V. Cảnh báo bắt buộc</h2>
-<div class="warn"><span class="cb tight">Có dùng Siêu phân giải vùng:</span> chi tiết do AI tái tạo, phải đối chiếu với ảnh gốc; không dùng ký tự biển số đọc từ vùng siêu phân giải làm căn cứ duy nhất.</div>
-<div class="warn"><span class="cb tight">Có dùng Phục hồi khuôn mặt:</span> mô hình tự sinh chi tiết khuôn mặt; ảnh chỉ để quan sát, <b>không dùng để tìm kiếm, so khớp khuôn mặt hay đưa vào danh sách theo dõi</b>.</div>
-<p>Ảnh, video đầu ra là sản phẩm phái sinh, đã xử lý bằng phần mềm, không thay thế bản gốc. Bản gốc được lưu nguyên vẹn với mã băm nêu tại mục II.</p>
-<div class="keep"><h2>VI. Kết luận</h2>
+<div class="keep"><h2>V. Kết luận</h2>
 <div class="lines"><i></i><i></i><i></i></div>
 <div class="sign two"><div><b>NGƯỜI THỰC HIỆN</b><i>(Ký, ghi rõ họ tên)</i><div class="sp"></div></div><div><b>THỦ TRƯỞNG ĐƠN VỊ</b><i>(Ký, đóng dấu)</i><div class="sp"></div></div></div></div>
 <h2 class="pb">Phụ lục. Nhật ký thao tác liên quan</h2>
 <table><colgroup><col style="width:6%"><col style="width:15%"><col style="width:15%"><col style="width:20%"><col style="width:28%"><col style="width:16%"></colgroup><tr><th>STT</th><th>Thời điểm</th><th>Người thực hiện</th><th>Thao tác</th><th>Đối tượng, mã chuỗi</th><th>Mã băm dòng</th></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr></table>
 <div class="guide"><b>Hướng dẫn điền</b><ol>
-<li>Phần mềm tự điền mục II, III, IV và phụ lục từ báo cáo xử lý (JSON) sinh ra khi lưu bản phái sinh hoặc xuất ảnh (UR-ENH-04); mục I, V (đánh dấu), VI điền tay.</li>
+<li>Phần mềm tự điền mục II, III, IV và phụ lục từ báo cáo xử lý (JSON) sinh ra khi lưu bản phái sinh hoặc xuất ảnh (UR-ENH-04); mục I và V điền tay.</li>
 <li>Mỗi tệp đầu ra cần có một báo cáo; với video, ghi đoạn In → Out và số khung đã xử lý.</li>
 <li>Mã EV, mã phái sinh &lt;EV&gt;-E&lt;n&gt; và khung &lt;EV&gt;-F&lt;n&gt; do Enhance cấp trong cơ sở dữ liệu của Enhance.</li>
 <li>Đây là mẫu tham khảo của Video Master AI; đơn vị đối chiếu với biểu mẫu nghiệp vụ hiện hành (câu hỏi mở Q12).</li></ol></div>
