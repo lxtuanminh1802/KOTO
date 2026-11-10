@@ -4512,11 +4512,15 @@ VMA.originTag = o => { const x = VMA.ORIGIN[o] || VMA.ORIGIN.upload; return `<sp
 
 
 /* ---------- audit log with a hash chain (AUD-01, AUD-02) ---------- */
-VMA.audit = async (action, object = '', caseCode = VMA.db.active()?.code, app = VMA.app) => {
-  const log = store.get('audit', []), prev = log.length ? log[log.length - 1].hash : '0'.repeat(64);
+let auditQ = Promise.resolve();
+VMA.audit = (action, object = '', caseCode = VMA.db.active()?.code, app = VMA.app) => {
   const row = { at: new Date().toISOString(), user: VMA.USER.name, app, action, object, case: caseCode };
-  row.hash = await sha256(prev + JSON.stringify(row));
-  log.push(row); store.set('audit', log.slice(-400));
+  // one row at a time: concurrent calls would otherwise read the same tail and overwrite each other
+  return auditQ = auditQ.then(async () => {
+    const log = store.get('audit', []), prev = log.length ? log[log.length - 1].hash : '0'.repeat(64);
+    row.hash = await sha256(prev + JSON.stringify(row));
+    log.push(row); store.set('audit', log.slice(-400));
+  }).catch(() => {});
 };
 VMA.verifyAudit = async () => {
   const log = store.get('audit', []); let prev = log.length && log.length === 400 ? null : '0'.repeat(64);
