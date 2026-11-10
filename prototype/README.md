@@ -10,3 +10,8 @@ Ba phần mềm độc lập, mỗi phần mềm một tệp HTML tự chứa (m
 
 Mỗi phần mềm có đăng nhập, vụ án, chứng cứ, nhật ký và cài đặt riêng (lưu trong trình duyệt), không liên thông với nhau.
 Ảnh bản đồ nền của Analyse cần mạng; khi không có mạng, tab Bản đồ dùng sơ đồ minh họa.
+
+Biểu mẫu báo cáo (A4, mẫu tham khảo), thư mục `bieu-mau/`. Mở bằng Chrome / Edge rồi In > Lưu thành PDF (khổ A4, lề mặc định) để ra bản PDF:
+
+- `VideoMasterAI_Extract_BienBanTrichXuat.html`: biên bản trích xuất dữ liệu video của Extract.
+- `VideoMasterAI_Enhance_BaoCaoXuLy.html`: báo cáo xử lý nâng cao chất lượng hình ảnh, video của Enhance.
